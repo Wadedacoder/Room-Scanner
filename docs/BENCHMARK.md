@@ -63,7 +63,7 @@ by design.
 |---|---|---|---|---|
 | Photos | `house_b` (17 photos, 6 rooms) | 6 | 3 (living, kitchen, bathroom) | DISK+LightGlue links, two-way pose agreement, shared-wall snap (E17–E18) |
 | LiDAR | `c7d28f72c6` | 5 | all 5 | one cloud; shared doors + carved passages (E19) |
-| Video | `house_b_walk.MOV` | see E21 | | |
+| Video | `house_b_walk.MOV` (212 s, 6 rooms) | **3** (rooms merge) | all 3 via open passages | 62% of frames tracked, 16/18 pieces joined (E21); not usable |
 
 The three unlinked photo rooms have no photo that sees into a neighbour; the protocol now asks for one look-through
 photo per doorway (E14).

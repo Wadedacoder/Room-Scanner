@@ -433,3 +433,43 @@ without the space. Kept as a known issue.
 See `fixloop/DECLARATION.md` (written first) and `fixloop/RESULT.md`. Study video, tape ground truth:
 before −35.8% short side / −34.5% area (35% of frames) → after −4.0% / −8.1% (64% of frames, 5 of 5 pieces joined).
 Prediction met on short side and area, missed on frames used (64% vs ≥ 70%); ±3% gate still fails, as predicted.
+
+## E21: The whole house as one video walk (house_b_walk.MOV, 212 s, 6 rooms) (2026-10-03)
+
+0.5× ultra-wide (estimated 94° FOV, matches the protocol), HDR on (converted), 1698 frames at 8 fps. Ground truth:
+no tape for the house rooms, so it is compared with the photo tier of the same house (`house_b`, 6 rooms, 45.95 m²
+total) for consistency only. Runs: `runs/e21b/house_b_walk.MOV/` (pipeline 0.7.x + this entry's changes).
+
+| | Result |
+|---|---|
+| COLMAP (best of 4 seeds, single-threaded) | 50 min; 18 pieces (largest 688 frames), 1047 / 1698 frames registered (62%) |
+| Pieces joined by DA3 bridges | 16 of 18; the 169-frame piece was not (no placed frame within the 80-frame bridge limit) |
+| Rooms | **3 instead of 6**: 33.8, 8.3, 18.2 m² (total 60.2 m² vs 46.0 m² from photos) |
+| Outlines | jagged (14–16 walls per room); room 1 is ~7.6 m long, i.e. several rooms merged |
+| Openings / adjacency | 1 door (0.60 m); all three rooms adjacent via open passages |
+| Per-keyframe metric-scale spread | 28.6% (study video: 20.4%) |
+| Runtime / memory | 887 s after COLMAP (bridging + depth); peak 3.36 GB phys_footprint |
+
+**Verdict: the video tier does not produce a usable plan of a multi-room walk.** Causes, in order of evidence:
+1. **38% of the walk never registers**, and the largest unjoined piece holds a whole stretch of it. COLMAP breaks at
+   every doorway turn; the bridges are DA3 chains with chain scale factors 0.70–2.50 (E20 saw the same).
+2. **Rooms merge** because the joined trajectory misplaces pieces: walls from different pieces don't coincide, so the
+   watershed finds no doorway constrictions. Staircase outlines are the same misalignment seen from above.
+3. **Metric scale is noisy per keyframe** (29%), so each small piece's scale is uncertain.
+
+**Changes made from this experiment:**
+* **Intervals were overconfident.** The video tier used a fixed 4% scale term; the measured per-keyframe spread is
+  20–29%. Each piece's scale is a median of n keyframe ratios (standard error ≈ 1.25·spread/√n), so the scale term is
+  now √(4%² + frame-weighted mean of piece standard errors²): **9.6% on the study video** (wall intervals now contain
+  the tape: short side 3.000 m, interval 2.52–3.48 m vs tape 3.124 m), 14.9% on the house walk. House room-1 area is
+  33.8 m² with interval 9.4–58.1 m²: an honest "this capture can't size this room" instead of a confident wrong number.
+* **Openings and adjacency on the video tier** (backlog 0.6): sightlines from keyframe depth + camera viewing
+  directions, same detector as photos with learned-depth tolerances. Study video: 2 doors (1.15 m gap, 0.85 m
+  see-through); the study does have 2 doorways (tape notes), widths untaped.
+* **Damage stage skipped every video room**: DA3 rounds 16:9 frames to 504×280 (aspect 1.800 vs 1.778); the aspect
+  check now allows 4%.
+* **Watchdog blind spot** (found while this ran): RSS missed GPU and swap; see CHANGELOG (watchdog now uses
+  phys_footprint).
+
+**Next for video (not done):** register more of the walk (learned features such as DISK+LightGlue inside COLMAP, or a
+looser sequential matcher), and allow bridges longer than 80 frames when the gap is a doorway turn.

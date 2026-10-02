@@ -36,7 +36,7 @@ def room_damage(room: dict, images, depth: np.ndarray, K: np.ndarray, c2w: np.nd
     imgs = [images[i] for i in idx]
     dh, dw = depth.shape[1:]
     ih, iw = imgs[0].shape[:2]
-    if abs(dw / dh - iw / ih) > 0.02:
+    if abs(dw / dh - iw / ih) > 0.04 * iw / ih:  # DA3 rounds sizes to 14 px patches (504x280 for 16:9, E21)
         warnings.append(f"{room['id']}: depth aspect {dw}x{dh} differs from the image {iw}x{ih}; damage skipped")
         return []
     if detector is None:

@@ -13,7 +13,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | 0.3 | Full-house photo run hangs (each room alone 10–13 s) | walk-in | ✅ not reproduced after offline-first loading (47.7 s) |
 | 0.4 | Place rooms from strong cross-room visual links (DISK+LightGlue + PnP) | P2 photo stitch | ✅ v0.6.0 (kitchen↔living) |
 | 0.5 | Door-geometry matching for rooms without a visual link; adjacency; overlap check | P2 photo stitch | 🟨 shared-wall + door alignment for linked rooms done; unlinked rooms ⏸ look-through capture |
-| 0.6 | Connected plan in plan.json (`adjacency`, global polygons) + SVG for photo, video, LiDAR | P2 | 🟨 photo done; LiDAR/video ⬜ |
+| 0.6 | Connected plan in plan.json (`adjacency`, global polygons) + SVG for photo, video, LiDAR | P2 | ✅ photo (3/6 linked), LiDAR (E19), video openings + adjacency (E21) |
 | 0.7 | Protocol: one photo per doorway looking through it into the next room (E14 evidence) | P1 | ✅ (needs a new capture to verify ⏸) |
 
 ## Robustness and reproducibility
@@ -29,7 +29,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | # | Item | Serves | Status |
 |---|---|---|---|
 | 2.1 | Video: join COLMAP pieces (DA3 through turns, E5) | P1 video | ✅ v0.7.0 (fix loop) |
-| 2.2 | Video: score house_b_walk.MOV (212 s, 6 rooms) | P2 | ⬜ |
+| 2.2 | Video: score house_b_walk.MOV (212 s, 6 rooms) | P2 | ✅ E21: 3 merged rooms, not usable; intervals now honest |
 | 2.3 | Photo intervals calibrated (coverage ≈ 90%) | P2 calibration | ⬜ |
 | 2.4 | LiDAR open-passage adjacency between split rooms | P2 adjacency | ✅ E19 (one unverified passage) |
 
@@ -39,6 +39,8 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | 3.1 | Damage regions (VLM, cached) with class + metric extent | P2 | ✅ code + smoke; real run blocked on API key + staged damage (user) |
 | 3.2 | Concealed-damage flags with fired rule; scope line items | P2 | ✅ |
 | 3.3 | Opening-width gate scorer; ceiling gate; repeatability table (`bench/gates.py`) | P2, D5 | 🟨 gates.py done; repeatability: photos ✅ (`bench/repeat.py`, 3 live runs identical), video ⬜; door widths ⏸ tape |
+
+| 2.5 | Video: register more of a multi-room walk (learned features in COLMAP; longer doorway bridges) | P1 video | ⬜ |
 
 ## Benchmark and deliverables
 | # | Item | Serves | Status |

@@ -8,6 +8,13 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Changed (E21)
+- **Video intervals use the measured scale error** instead of a fixed 4%: √(4%² + per-piece standard error²). Study
+  video 9.6% (its wall intervals now contain the tape), house walk 14.9%.
+- **Video tier reports openings and adjacency** (sightlines from keyframe depth; study video finds 2 doors).
+- Damage stage accepts DA3's 14-px rounding of frame size (it skipped every video room).
+- E21: the 212 s whole-house walk gives 3 merged rooms from 62% tracked frames, written up as not usable.
+
 ### Fixed (found by the clean-machine README test)
 - Every run (all tiers) crashed with `No module named 'anthropic'` when the damage extra wasn't installed: the damage
   stage now treats a missing SDK like missing credentials (warning, empty damage, geometry ships); `vlm` is in the

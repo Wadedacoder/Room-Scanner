@@ -14,7 +14,7 @@ from PIL import Image
 
 from roomscan.geometry.cloud import find_levels
 from roomscan.io.video import FOV_1X_DEG, extract_frames, probe
-from roomscan.pipeline.backend import VIDEO_ERR, empty_plan, rooms_from_cloud
+from roomscan.pipeline.backend import VIDEO_ERR, ErrorModel, empty_plan, rooms_from_cloud
 from roomscan.pipeline.photos import wall_rays
 from roomscan.recon.learned import gravity_align, voxelize
 from roomscan.recon.sfm import run_sfm
@@ -85,7 +85,7 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     depths = dict(zip(all_keys, depth_list))
 
     # metric scale PER PIECE: DA3Metric depth vs that piece's own sparse COLMAP depths (pieces have unrelated scales)
-    pieces_metric, piece_scales, all_ratios = [], [], []
+    pieces_metric, piece_scales, all_ratios, piece_n = [], [], [], []
     for p, ks in zip(pieces, keys_per_piece):
         ratios = []
         for k in ks:
@@ -104,6 +104,7 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
         sc = float(np.median(ratios))
         all_ratios += [r / sc for r in ratios]
         piece_scales.append(sc)
+        piece_n.append((len(ratios), len(p.c2w)))
         m = {}
         for n, T in p.c2w.items():
             T = T.copy()
@@ -113,6 +114,13 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     if not pieces_metric:
         raise RuntimeError("could not fix metric scale: no keyframe sees enough COLMAP points")
     scale_spread = float(np.std(all_ratios)) if len(all_ratios) > 2 else 0.1
+    # E21: the fixed 4% scale term was overconfident (per-keyframe scale spread 20-29%). Each piece's scale is a median
+    # of n keyframe ratios (standard error ~1.25 * spread / sqrt(n)); combine pieces weighted by frames, then add the
+    # DA3Metric systematic term (E1) in quadrature.
+    w = np.array([f for _, f in piece_n], float)
+    se = np.array([1.25 * scale_spread / np.sqrt(n) for n, _ in piece_n])
+    scale_se = float(np.sqrt(np.sum(w * se ** 2) / w.sum()))
+    err = ErrorModel(VIDEO_ERR.abs_m, float(np.hypot(VIDEO_ERR.rel, scale_se)))
     join_log = []
     if len(pieces_metric) > 1:
         from roomscan.recon.bridge import join_pieces
@@ -143,18 +151,27 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     cam_xyz = cams[:, :3, 3] @ G.T
     P = voxelize(np.concatenate(pts), VOXEL)
     floor = find_levels(P, float(np.median(cam_xyz[:, 1]))).floor
-    res = rooms_from_cloud(P, cam_xyz, wall_rays(pts, cam_xyz, floor), VIDEO_ERR, VOXEL, split=True,
-                           interior_mode="walls")
+    # door/window evidence: points seen through wall lines, plus camera viewing directions for "gap" openings
+    rng = np.random.default_rng(0)
+    sel = [rng.choice(len(Q), min(len(Q), 3000), replace=False) for Q in pts]
+    sightlines = (np.concatenate([np.repeat(c[None, [0, 2]], len(i), 0) for c, i in zip(cam_xyz, sel)]),
+                  np.concatenate([Q[i][:, [0, 2]] for Q, i in zip(pts, sel)]),
+                  np.concatenate([Q[i][:, 1] for Q, i in zip(pts, sel)]))
+    fwd = (cams[:, :3, 2] @ G.T)[:, [0, 2]]
+    hfov = float(2 * np.arctan(depths[keys[0]].shape[1] / 2 / K[0, 0]))
+    res = rooms_from_cloud(P, cam_xyz, wall_rays(pts, cam_xyz, floor), err, VOXEL, split=True,
+                           interior_mode="walls", sightlines=sightlines, cam_fwd_xz=fwd, hfov=hfov)
 
     plan = empty_plan("video", str(path))
     plan["rooms"] = res.rooms
+    plan["adjacency"] = res.adjacency or []
     total = sum(r["floor_area"]["value"] for r in res.rooms)
     var = sum(((r["floor_area"]["hi"] - r["floor_area"]["lo"]) / 3.29) ** 2 for r in res.rooms)
     from roomscan.pipeline.backend import meas
 
     plan["property"] = {"footprint_area": meas(total, float(np.sqrt(var)), "m2")}
     dmg_warn = []
-    _video_damage(plan, res, keys, imgs, depths, K, cams, G, cfg, dmg_warn)
+    _video_damage(plan, res, keys, imgs, depths, K, cams, G, err, cfg, dmg_warn)
     coverage = len(reg) / len(names)
     plan["capture"] |= {"device": info.model or "unknown", "drift_correction": "off",
                         "runtime_s": round(time.time() - t0, 1),
@@ -163,7 +180,8 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
                                   "pieces_joined": sum(1 for g in join_log if g.get("joined")) + 1,
                                   "join_log": join_log,
                                   "focal_px": round(f_px, 1), "fov_deg": round(fov, 1), "lens_estimate": lens,
-                                  "metric_scale_spread": round(scale_spread, 3), "sfm_s": round(t_sfm, 1),
+                                  "metric_scale_spread": round(scale_spread, 3),
+                                  "scale_rel_sigma": round(err.rel, 4), "sfm_s": round(t_sfm, 1),
                                   "sfm": {"fps": rc["video_fps"], "matcher": rc["video_matcher"],
                                           "overlap": rc["video_seq_overlap"]}}}
     warns = list(res.warnings) + dmg_warn
@@ -174,12 +192,13 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
         warns.append(f"estimated lens {lens} ({fov:.0f}° wide); the protocol asks for 0.5x")
     if info.hdr:
         warns.append("HDR video: converted to standard range for processing (the protocol asks for HDR off)")
-    plan["warnings"] = warns + ["video-tier intervals use a 4% scale term from proxy experiments; not yet calibrated",
-                                "openings and adjacency are not implemented yet on the video tier"]
+    plan["warnings"] = warns + [(f"video-tier intervals use a {100 * err.rel:.1f}% scale term (4% DA3Metric + "
+                                 "measured per-piece scale error); not yet calibrated against tape"),
+                                "video openings use learned-depth tolerances (E15); widths are untaped"]
     return plan, {"backend": res.debug, "piece_scales": piece_scales, "join_log": join_log}
 
 
-def _video_damage(plan, res, keys, imgs, depths, K, cams, G, cfg, warnings) -> None:
+def _video_damage(plan, res, keys, imgs, depths, K, cams, G, err, cfg, warnings) -> None:
     """Per room: keyframes taken from inside it, their metric depth and gravity-aligned joined poses."""
     from roomscan.damage.stage import finalize, room_damage, views_in_room
     from roomscan.geometry import plan2d as p2
@@ -198,6 +217,6 @@ def _video_damage(plan, res, keys, imgs, depths, K, cams, G, cfg, warnings) -> N
         if not idx:
             continue
         regions += room_damage(room, [imgs[keys[i]] for i in idx], np.stack([depths[keys[i]] for i in idx]),
-                               np.stack([K] * len(idx)), c2w[idx], floor, theta, VIDEO_ERR, cfg,
+                               np.stack([K] * len(idx)), c2w[idx], floor, theta, err, cfg,
                                Path(cfg["runtime"]["cache_dir"]), warnings, [keys[i] for i in idx])
     finalize(plan, regions)
