@@ -46,14 +46,18 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | # | Item | Serves | Status |
 |---|---|---|---|
 | 4.1 | Fix loop: declare worst gate (number, cause, prediction) BEFORE fixing; before/after regenerable | P4 (25%) | ✅ fixloop/ (video study −35.8% → −4.0%) |
-| 4.2 | Head-to-head vs magicplan on 2 rooms | P3 (10%) | ⏸ needs a Pro iPhone |
+| 4.2 | Head-to-head vs magicplan on 2 rooms | P3 (10%) | ✖ not possible: no Pro iPhone available (user, 2026-10-03) |
 | 4.3 | Device matrix | D2 | ✅ docs/DEVICE_MATRIX.md |
 | 4.4 | Benchmark report (gates per tier, repeatability, timing) | D5 | 🟨 docs/BENCHMARK.md drafted; video house row waits on E21 |
 | 4.5 | Technical report ≤ 6 pages | D7 | ✅ draft docs/TECH_REPORT.md (update when E21 + tape land) |
-| 4.6 | Raw data release + fetch script | D8 | 🟨 zips + checksummed manifest + verified fetch done; upload ⏸ user OK to publish home captures |
+| 4.6 | Raw data release + fetch script | D8 | 🟨 tooling done; home captures stay private (user decision 2026-10-03); public part = case-study LiDAR scans only |
 | 4.7 | Clean-machine test: README to a result in < 15 min | D3 | ✅ ≈ 10 min, empty caches (BENCHMARK §5b); found + fixed 2 bugs |
 
-## Waiting on the user
-* Tape: length × width of living, kitchen, bedroom, bathroom, store; door widths; second readings.
-* A Pro iPhone for an hour (LiDAR of our rooms + magicplan).
-* A protocol capture with doorway "look-through" photos (after 0.7).
+## Waiting on the user / not available
+* ✖ Tape for the other house rooms, door widths, second readings: not possible now (user, 2026-10-03). Only the study
+  is taped; benchmark claims are limited to it.
+* ✖ Pro iPhone (LiDAR of our rooms + magicplan head-to-head): not available (user, 2026-10-03).
+* ✖ Public release of the home captures: declined (user, 2026-10-03).
+* ⏸ A protocol capture with doorway "look-through" photos (after 0.7).
+* Damage: no API key needed once the local detector (OWLv2) is the default; staged-damage photos would still be
+  needed to measure detection accuracy.

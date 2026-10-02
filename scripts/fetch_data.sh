@@ -2,12 +2,14 @@
 # Fetch the benchmark captures into data/raw/ and verify them against bench/datasets/release_manifest.json.
 # Large binaries are never committed (case-study constraint); they are assets of the GitHub release `data-v1`,
 # built by scripts/package_data.py.
-#   scripts/fetch_data.sh                 # everything (~1.6 GB)
-#   scripts/fetch_data.sh photos video    # only assets whose name starts with these prefixes
+#   scripts/fetch_data.sh                 # the public part: the case-study LiDAR scans (~0.9 GB)
+#   scripts/fetch_data.sh photos video    # home captures: PRIVATE (owner's decision), only with ROOMSCAN_DATA_URL
+#                                         # pointing at a copy you were given
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REL="${ROOMSCAN_DATA_URL:-https://github.com/Wadedacoder/Room-Scanner/releases/download/data-v1}"
 mkdir -p data/downloads data/raw/lidar
+[ $# -eq 0 ] && set -- lidar
 python3 - "$@" <<'PY' > data/downloads/.want
 import json, sys
 m = json.load(open("bench/datasets/release_manifest.json"))["assets"]

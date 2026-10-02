@@ -8,6 +8,11 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Decisions (user, 2026-10-03)
+- No further tape and no Pro iPhone: benchmark claims stay limited to the taped study; magicplan head-to-head and LiDAR
+  accuracy are reported as not done. Home captures are not published: `fetch_data.sh` defaults to the case-study
+  LiDAR scans only.
+
 ### Changed (E21)
 - **Video intervals use the measured scale error** instead of a fixed 4%: √(4%² + per-piece standard error²). Study
   video 9.6% (its wall intervals now contain the tape), house walk 14.9%.
