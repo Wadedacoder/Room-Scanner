@@ -64,7 +64,8 @@ class BackendResult:
 
 def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, voxel: float,
                      split: bool = True, id_prefix: str = "r", label: str | None = None,
-                     interior_mode: str = "carve", sightlines=None) -> BackendResult:
+                     interior_mode: str = "carve", sightlines=None, cam_fwd_xz=None,
+                     hfov: float | None = None) -> BackendResult:
     """P: (N,3) world points, +Y up, metres. cam_xyz: camera centres. rays: (start_xz, end_xz) for carving.
 
     split=False treats everything as ONE room (photo tier: each folder is one room by protocol).
@@ -140,13 +141,18 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
 
             c_uv, p_uv, p_y = sightlines[0] @ R.T, sightlines[1] @ R.T, sightlines[2] - lev.floor
             tol = (0.08, 0.25) if err.rel == 0 else (0.20, 0.40)  # LiDAR vs learned-depth walls (E15)
-            for j, o in enumerate(detect_openings(poly, p_uv, p_y, c_uv, wall_tol=tol[0], beyond_min=tol[1])):
+            vis = {}
+            if cam_fwd_xz is not None and hfov is not None:
+                vis = {"cams_uv": cam_xyz[:, [0, 2]] @ R.T, "cams_fwd": cam_fwd_xz @ R.T, "hfov": hfov}
+            for j, o in enumerate(detect_openings(poly, p_uv, p_y, c_uv, wall_tol=tol[0], beyond_min=tol[1], **vis)):
                 w_sig = float(np.sqrt(2 * (0.025 + err.abs_m) ** 2 + (err.rel * o.width) ** 2))  # +-half a slot per jamb
                 openings.append({"id": f"{rid}.o{j + 1}", "wall_id": f"{rid}.w{o.wall + 1}",
                                  "type": o.kind, "width": meas(o.width, w_sig, "m"),
                                  "offset_along_wall": meas(o.offset, w_sig, "m"),
                                  "sill_height": meas(max(o.sill, 0.0), 0.05, "m"), "connects_to": None,
-                                 "detection_confidence": round(min(1.0, o.support / 200), 2),
+                                 "detection_confidence": round(min(1.0, o.support / 200), 2) if o.evidence ==
+                                 "see_through" else 0.3,
+                                 "evidence": o.evidence,
                                  "centre_plan": list(o.centre_uv)})
         room = {"id": rid, "label": label or f"room {k + 1}", "polygon": poly.round(4).tolist(), "walls": walls,
                 "openings": openings, "floor_area": meas(area, area_sig, "m2"),

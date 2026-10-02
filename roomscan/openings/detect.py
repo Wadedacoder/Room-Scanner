@@ -28,6 +28,7 @@ class Opening:
     sill: float  # lowest see-through height above the floor
     support: int  # number of see-through points
     centre_uv: tuple[float, float]
+    evidence: str = "see_through"  # see_through | gap (no wall surface where a camera was looking; E15)
 
 
 def _segment_crossings(cam_uv, pts_uv, a, b):
@@ -42,9 +43,22 @@ def _segment_crossings(cam_uv, pts_uv, a, b):
     return np.where(ok, t, np.nan)
 
 
+def _visible_slots(a, u, nslot, cams_uv, cams_fwd, hfov, max_dist=6.0):
+    """Slots of wall a + u*t that lie inside at least one camera's horizontal field of view."""
+    t = (np.arange(nslot) + 0.5) * SLOT
+    centres = a[None] + t[:, None] * u[None]
+    vis = np.zeros(nslot, bool)
+    for c, f in zip(cams_uv, cams_fwd):
+        d = centres - c
+        dist = np.linalg.norm(d, axis=1)
+        cosang = (d @ f) / np.maximum(dist, 1e-9) / max(np.linalg.norm(f), 1e-9)
+        vis |= (dist < max_dist) & (cosang > np.cos(hfov / 2))
+    return vis
+
+
 def detect_openings(polygon: np.ndarray, pts_uv: np.ndarray, pts_h: np.ndarray, pts_cam_uv: np.ndarray,
                     min_w: float = 0.55, max_w: float = 2.4, wall_tol: float = 0.08,
-                    beyond_min: float = 0.25) -> list[Opening]:
+                    beyond_min: float = 0.25, cams_uv=None, cams_fwd=None, hfov: float | None = None) -> list[Opening]:
     """polygon: (n,2) room outline, CCW, plan frame. pts_uv/pts_h: all points (plan position, height above floor).
     pts_cam_uv: for each point, the plan position of the camera that saw it."""
     out: list[Opening] = []
@@ -74,7 +88,13 @@ def detect_openings(polygon: np.ndarray, pts_uv: np.ndarray, pts_h: np.ndarray, 
         low = np.full(nslot, np.inf)
         np.minimum.at(low, bslot, bh)
         wall_ref = np.percentile(wall_cnt[wall_cnt > 0], 75) if (wall_cnt > 0).any() else 1.0
-        open_slot = (see_cnt >= 3) & (wall_cnt < 0.15 * wall_ref)
+        see_slot = (see_cnt >= 3) & (wall_cnt < 0.15 * wall_ref)
+        gap_slot = np.zeros(nslot, bool)
+        if cams_uv is not None and hfov is not None and (wall_cnt > 0).mean() >= 0.4:
+            # sparse photos (E15): a doorway often shows only as missing wall where a camera WAS looking
+            gap_slot = (wall_cnt < 0.15 * wall_ref) & _visible_slots(a, u, nslot, cams_uv, cams_fwd, hfov)
+            gap_slot[:2] = gap_slot[-2:] = False  # corners: wall-fit noise, not doors
+        open_slot = see_slot | gap_slot
         # close 1-slot holes, then take runs
         s = open_slot.copy()
         s[1:-1] |= open_slot[:-2] & open_slot[2:]
@@ -91,7 +111,12 @@ def detect_openings(polygon: np.ndarray, pts_uv: np.ndarray, pts_h: np.ndarray, 
                 sill = float(np.min(low[i:j + 1]))
                 kind = "window" if sill > 0.5 else ("door" if w <= 1.2 else "open_passage")
                 mid = a + u * ((i + j + 1) / 2 * SLOT)
+                seen = see_slot[i:j + 1].mean() >= 0.3
+                if not np.isfinite(sill):
+                    sill = 0.0  # gap with no see-through: assume it reaches the floor (door), low confidence
+                    kind = "door" if w <= 1.2 else "open_passage"
                 out.append(Opening(wi, round(i * SLOT, 3), round(w, 3), kind, round(sill, 2),
-                                   int(see_cnt[i:j + 1].sum()), (round(float(mid[0]), 3), round(float(mid[1]), 3))))
+                                   int(see_cnt[i:j + 1].sum()), (round(float(mid[0]), 3), round(float(mid[1]), 3)),
+                                   "see_through" if seen else "gap"))
             i = j + 1
     return out

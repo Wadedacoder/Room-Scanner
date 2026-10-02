@@ -14,6 +14,9 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   Openings land in `plan.json` and are drawn in the SVG. Checked: LiDAR `c00a170fe1` finds the corridor–bathroom door
   from both rooms at the same place (0.60 / 0.65 m); a synthetic 0.9 m door test passes. Photo rooms: none found yet
   (E15, in progress).
+- Photo-room openings (E15): lightly filtered points for openings (doorway views are low-confidence depth), photo
+  wall tolerances (±20 / 40 cm), and "gap" openings: missing wall surface where a camera was looking (confidence 0.3,
+  `evidence: gap` in plan.json). house_b now finds a door or window in every room; widths unverified.
 - **Cross-room photo matching** experiment (E14): DISK + LightGlue finds the real kitchen↔living link (89 matches) and
   bathroom↔living (47); SIFT can't (≤ 44, noise level). `kornia` added for it.
 - `scripts/healthcheck.sh` (tests, website, memory, stuck jobs, disk, git, offline weights), run every 30 min by a

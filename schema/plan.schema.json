@@ -129,6 +129,13 @@
         "centre_plan": {
           "$ref": "#/$defs/Point2",
           "description": "opening centre in plan coordinates"
+        },
+        "evidence": {
+          "enum": [
+            "see_through",
+            "gap"
+          ],
+          "description": "see_through: the camera saw into the next room; gap: wall surface missing where a camera was looking (weaker)"
         }
       }
     },

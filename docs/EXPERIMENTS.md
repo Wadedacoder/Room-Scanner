@@ -319,3 +319,49 @@ through the 0.5.1 letterbox for the first time) is 2.87 × 3.24 m (9.31 m²); fr
 **Open:** without tape for living, kitchen, store and bathroom, "bad" cannot be quantified. Asked the user for those
 dimensions. Candidate causes to test once they exist: per-room metric scale (scale factor varies 1.25–2.39 across
 rooms), uncovered walls with too few photos (2–3 per room vs 8 in the protocol), and outline edges snapping to furniture.
+
+## E14: Can photos from different rooms be linked? (2026-10-02)
+
+`bench/local/e14_cross_room.py` on house_b (17 photos in room folders). Matches verified by a fundamental-matrix RANSAC.
+
+| | SIFT | DISK + LightGlue (kornia; Mac GPU, 4.5 GB cap, 55 s) |
+|---|---|---|
+| same-room photo pairs (median verified matches) | 18 | 43 |
+| kitchen ↔ living | 17 | **89** (4643 ↔ 4638: the kitchen photo that looks into the living room) |
+| bathroom ↔ living | 21 | **47** (4651 ↔ 4641) |
+| every other room pair | 14–44 (noise) | 14–38 (noise) |
+
+* SIFT can't link 0.5× ring photos even within a room (median 18). DISK + LightGlue can, and it finds the real
+  cross-room links, but only where a photo sees into the next room: 1–2 of the 5 connections in house_b.
+* Engineering: DISK at 1024 px ran out of the 3.2 GB GPU cap; on CPU it took ~1 min per image and stalled with torch
+  and OpenCV thread pools in one process. Ran on the GPU with the user-approved 4.5 GB cap.
+* Consequence: rooms without a look-through photo need door-geometry matching (E15), and the protocol should ask for
+  one photo per doorway looking through it (backlog 0.7).
+
+## E15: Door and window detection on photo rooms (2026-10-02)
+
+Rule (`roomscan/openings/detect.py`): along each wall, 5 cm slots; an opening is a run with little wall surface where
+the cameras saw through (see_through), or, for photos, a run with little wall surface inside a camera's field of view
+while the rest of the wall is well covered (gap, confidence 0.3).
+
+Iterations on house_b:
+1. LiDAR tolerances (wall ±8 cm, beyond 25 cm): **no openings in any photo room.**
+2. Diagnosis (study): no points beyond any wall line. The 30th-percentile depth-confidence filter removes the views
+   through doorways (furthest point 2.7 m with it, 6.6 m without); photo walls are ~±20 cm thick, not ±1 cm.
+   Fix: openings use a lightly filtered (5th percentile) point set; photo tolerances wall ±20 cm, beyond 40 cm.
+   Still none.
+3. Per-wall profiles (study): one real see-through gap only 0.45 m wide (below the 0.55 m minimum); one 0.65 m stretch
+   with no wall surface and nothing visible beyond. Fix: "gap" openings where a camera was looking.
+4. Result:
+
+| Room | Openings found |
+|---|---|
+| kitchen | door 0.95 m (see-through): matches the kitchen↔living visual link (E14) |
+| living | door 0.80 m (gap), door 0.55 m (see-through) |
+| bathroom | door 0.75 m (gap), door 0.55 m (see-through, weak) |
+| study | door 0.70 m (gap) |
+| bedroom | window 1.30 m (see-through); no door found |
+| store | window 0.85 m (gap); no door found |
+
+No door widths are taped yet, so widths are unverified. LiDAR `c00a170fe1`: the corridor–bathroom door is found from
+both rooms at the same place (0.60 / 0.65 m).

@@ -57,8 +57,10 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
         sl = [(np.repeat(c[None, [0, 2]], min(len(Q), 20000), 0), Q[sel][:, [0, 2]], Q[sel][:, 1])
               for c, Q in zip(cams, far_pts) for sel in [sl_rng.choice(len(Q), min(len(Q), 20000), replace=False)]]
         sightlines = tuple(np.concatenate([x[i] for x in sl]) for i in range(3))
+        fwd = (rec.c2w[:, :3, 2] @ Gr.T)[:, [0, 2]]  # camera viewing directions, gravity frame
+        hfov = float(2 * np.arctan(rec.depth.shape[2] / 2 / rec.K[0, 0, 0]))
         res = rooms_from_cloud(P, cams, rays, PHOTO_ERR, VOXEL, split=False, id_prefix=name, label=name,
-                               sightlines=sightlines,
+                               sightlines=sightlines, cam_fwd_xz=fwd, hfov=hfov,
                                interior_mode=cfg["recon"]["photo_outline"])  # sparse views can't carve (E6)
         warnings += res.warnings
         debug[name] = {"scale": rec.scale, "focal_pred_err": rec.focal_pred_err, "n_photos": len(photos),
