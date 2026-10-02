@@ -1,0 +1,19 @@
+# house_b: the first protocol-style photo capture. iPhone 14 Plus, Camera app, 2026-10-02 19:59-20:01.
+# All 19 stills are LANDSCAPE at 0.5x (EXIF f35 = 14 mm), as the protocol asks; 2-4 per room instead of 8.
+# Originals: data/raw/photos/house_b_src/ (gitignored, hard links to ~/Downloads/IMG_4638-4656.HEIC).
+# Room grouping by content, confirmed by the user 2026-10-02.
+space_id: home_tape
+device: iPhone 14 Plus
+rooms:
+  living:   [4638, 4639, 4641]
+  kitchen:  [4640, 4642, 4643]
+  store:    [4645, 4646, 4647]
+  bedroom:  [4648, 4649]          # same bedroom as house_a (IMG_4622-4628): cross-capture repeatability pair
+  bathroom: [4650, 4651]
+  study:    [4653, 4654, 4655, 4656]   # the taped room (bench/ground_truth/home_tape.yaml)
+connectors_not_used: {4644: "hall with three doors", 4652: "doorway into the bathroom"}
+variants:
+  - {id: house_b,       tests: "whole property, 6 rooms, protocol lens and orientation"}
+  - {id: house_b_study, tests: "study only (4 photos): scored against tape"}
+video: {path: data/raw/video/house_b_walk.MOV, duration_s: 212, orientation: "landscape (protocol asks portrait)",
+        size_mb: 448, original: "~/Downloads/IMG_4657.MOV"}
