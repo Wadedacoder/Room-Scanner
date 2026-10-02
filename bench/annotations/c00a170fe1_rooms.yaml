@@ -1,0 +1,8 @@
+# Hand annotation: which frames of the "single_room" LiDAR capture were taken inside which room.
+# Determined from the top-down trajectory plot + frame thumbnails at the transitions (2026-10-02).
+# Used only to build the proxy photo tier (scripts/make_photo_tier.py); the pipeline never reads it.
+capture: c00a170fe1
+rooms:
+  living: [[0, 560]]            # sofa, wardrobe, fridge (studio living/kitchenette)
+  corridor: [[575, 860], [1420, 1715]]
+  bathroom: [[885, 1400]]       # glass shower enclosure (glass failure mode), WC, vanity

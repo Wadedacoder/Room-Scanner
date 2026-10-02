@@ -1,0 +1,19 @@
+# Ground truth for one physical space. One file per space; captures reference it by space id.
+# Measure each value 3x with the laser and record all three (the spread is the GT's own uncertainty).
+# Tape-only values must set instrument: tape.
+space_id: home_a
+measured_on: 2026-10-02
+instrument: laser          # laser | tape
+instrument_model: ""
+rooms:
+  - id: living
+    ceiling_height_m: [0.0, 0.0, 0.0]       # floor to ceiling, room centre
+    walls:                                  # clockwise from the entry door; the name is what we wrote on painter's tape
+      - {id: w1, length_m: [0.0, 0.0, 0.0]}
+    openings:
+      - {id: d1, wall: w1, type: door, width_m: [0.0, 0.0, 0.0], height_m: [0.0], connects_to: hall}
+    floor_area_m2: null                     # leave null to derive from walls
+damage:                                     # staged damage, for the damage room only
+  - {room: living, wall: w2, class: water_stain, width_m: 0.0, height_m: 0.0}
+captures:                                   # every capture of this space, at any tier
+  - {path: data/raw/lidar/c00a170fe1, tier: lidar, device: "iPhone ?? Pro", rooms: [living], app: "Stray Scanner 1.x"}
