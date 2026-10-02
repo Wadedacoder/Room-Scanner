@@ -5,7 +5,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done · ❌ fails gate (repor
 | # | Requirement (brief §) | File path | Artifact | Status |
 |---|---|---|---|---|
 | 1 | Capture route: stock protocol (P1) | docs/CAPTURE_PROTOCOL.md | one-page protocol (v2: 0.5× overlapping ring, non-Mac hand-off) | ✅ |
-| 2 | Device matrix (P1) | docs/DEVICE_MATRIX.md | table | ⬜ |
+| 2 | Device matrix (P1) | docs/DEVICE_MATRIX.md | table (measured figures only) | ✅ |
 | 3 | Photo tier → stitched plan (P1) | roomscan/io/photos.py | plan.json/svg | ⬜ |
 | 4 | Video tier (P1) | roomscan/io/video.py | plan.json/svg | ⬜ |
 | 5 | LiDAR tier (P1) | roomscan/pipeline/lidar.py | plan.json/svg (v0.1) | ✅ |

@@ -45,7 +45,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 |---|---|---|---|
 | 4.1 | Fix loop: declare worst gate (number, cause, prediction) BEFORE fixing; before/after regenerable | P4 (25%) | ✅ fixloop/ (video study −35.8% → −4.0%) |
 | 4.2 | Head-to-head vs magicplan on 2 rooms | P3 (10%) | ⏸ needs a Pro iPhone |
-| 4.3 | Device matrix | D2 | ⬜ |
+| 4.3 | Device matrix | D2 | ✅ docs/DEVICE_MATRIX.md |
 | 4.4 | Benchmark report (gates per tier, repeatability, timing) | D5 | ⬜ |
 | 4.5 | Technical report ≤ 6 pages | D7 | ⬜ |
 | 4.6 | Raw data release + fetch script | D8 | ⬜ |
