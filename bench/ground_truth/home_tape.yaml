@@ -5,18 +5,24 @@ space_id: home_tape
 measured_on: 2026-10-02
 instrument: tape
 instrument_model: ""          # e.g. "Stanley 5 m"
-phone: ""                     # e.g. "iPhone 15" (Settings > General > About > Model Name)
+phone: "iPhone 14 Plus"       # from the photo/video metadata
 
 rooms:
-  - id: room1                 # rename freely (bedroom, kitchen...), must match the photo folder name
-    ceiling_height_cm: [null, null]     # floor to ceiling, in a corner, along the wall
-    walls:                              # clockwise, starting with the wall that has the door; label them w1, w2...
-      - {id: w1, length_cm: [null, null]}
-      - {id: w2, length_cm: [null, null]}
-      - {id: w3, length_cm: [null, null]}
-      - {id: w4, length_cm: [null, null]}
-    openings:                           # inside the frame, jamb to jamb (doors) / reveal to reveal (windows)
-      - {id: d1, wall: w1, type: door, width_cm: [null, null], height_cm: [null], connects_to: hall}
+  - id: study                 # matches the photo folders data/raw/photos/study_*/study/
+    # Readings in inches as given (converted x 2.54). Walls in the order the user described them going round the room;
+    # opposite pairs: w1/w3 (123 in each) and w2/w4 (130 vs ~138 in; the 8 in difference is the cove near the second
+    # doorway, per the first note). Single readings only so far.
+    ceiling_height_cm: [274.3, null]    # 108 in
+    walls:
+      - {id: w1, desc: "wall with the door",         length_cm: [312.4, null]}            # 123 in
+      - {id: w2, desc: "wall with the whiteboard",   length_cm: [330.2, null]}            # 130 in
+      - {id: w3, desc: "wall with the cupboard",     length_cm: [312.4, null]}            # 123 in
+      - {id: w4, desc: "brown wall",                 length_cm: [350.5, null], approx: true}  # ~138 in, "approx"
+    still_to_record: [second readings, cove width and depth, door widths, which wall has the second doorway,
+                      clockwise vs anticlockwise order]
+    openings:
+      - {id: d1, wall: w1, type: door, width_cm: [null, null], height_cm: [null], connects_to: null}
+      - {id: d2, wall: null, type: door, width_cm: [null, null], height_cm: [null], connects_to: null}
   - id: room2
     ceiling_height_cm: [null, null]
     walls:

@@ -8,6 +8,11 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Added
+- Study tape readings assigned to walls (`bench/ground_truth/home_tape.yaml`): door wall 123 in, whiteboard wall
+  130 in, cupboard wall 123 in, brown wall ~138 in (approximate), ceiling 108 in. Opposite pairs 312.4/312.4 cm and
+  330.2/~350.5 cm. Single readings; cove size, door widths and second readings still to record.
+
 ## [0.3.1] - 2026-10-02 · memory safety after the laptop crash · tag `v0.3.1`
 
 ### Fixed
