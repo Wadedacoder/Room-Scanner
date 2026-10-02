@@ -26,8 +26,8 @@ Status: ⬜ not started · 🟨 in progress · ✅ done · ❌ fails gate (repor
 | 20 | Fix loop declaration, before/after, diff (P4) | fixloop/ (DECLARATION.md, RESULT.md), tags fixloop-before/after | video short side −35.8% → −4.0% | ✅ |
 | 21 | Reproduction bundle, cached model outputs (Deliv. 4) | roomscan/recon/checkpoint.py, cache/vlm/, bench/kaggle/ | checkpoints by input hash; `ROOMSCAN_NO_CACHE=1` reruns live | ✅ |
 | 22 | Benchmark report incl. timing (Deliv. 5) | docs/BENCHMARK.md | report | 🟨 house video row pending |
-| 23 | Technical report ≤ 6 pp (Deliv. 7) | docs/TECH_REPORT.md | report | 🟨 |
+| 23 | Technical report ≤ 6 pp (Deliv. 7) | docs/TECH_REPORT.md | report (~2.3k words + tables, ≈ 5 pages) | ✅ draft |
 | 24 | Raw benchmark data (Deliv. 8) | scripts/package_data.py, scripts/fetch_data.sh | release `data-v1` (1.68 GB, SHA-256 manifest) | 🟨 upload ⏸ user OK |
-| 25 | Mirrors / glass / wet-look / low light covered (Constraints) | docs/TECH_REPORT.md | failure-mode section | 🟨 |
+| 25 | Mirrors / glass / wet-look / low light covered (Constraints) | docs/TECH_REPORT.md §6 | failure-mode table (expected effect, mitigation, tested?) | 🟨 mostly untested, said so |
 | 26 | Weights fetched by script (Constraints) | scripts/setup_models.sh, roomscan/recon/da3_loader.py | prefetch + offline-first loading | ✅ |
 | 27 | Hardware profiles, clean-machine install | configs/, scripts/setup.sh | `roomscan hw`; clean-machine test running | 🟨 |

@@ -47,7 +47,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | 4.2 | Head-to-head vs magicplan on 2 rooms | P3 (10%) | ⏸ needs a Pro iPhone |
 | 4.3 | Device matrix | D2 | ✅ docs/DEVICE_MATRIX.md |
 | 4.4 | Benchmark report (gates per tier, repeatability, timing) | D5 | 🟨 docs/BENCHMARK.md drafted; video house row waits on E21 |
-| 4.5 | Technical report ≤ 6 pages | D7 | ⬜ |
+| 4.5 | Technical report ≤ 6 pages | D7 | ✅ draft docs/TECH_REPORT.md (update when E21 + tape land) |
 | 4.6 | Raw data release + fetch script | D8 | 🟨 zips + checksummed manifest + verified fetch done; upload ⏸ user OK to publish home captures |
 | 4.7 | Clean-machine test: README to a result in < 15 min | D3 | ⬜ |
 

@@ -14,6 +14,8 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   expected); a 212 s walk at 8 fps with best-of-4 single-threaded mapping is ~7 min per seed on the M1.
 
 ### Added
+- `docs/TECH_REPORT.md` (backlog 4.5): architecture, uncertainty model, results, what failed, fix loop, failure-mode
+  table for mirrors / glass / wet-look / low light (each marked tested or not), limits. Compliance matrix refreshed.
 - Data release (backlog 4.6): `scripts/package_data.py` builds release zips (house photos, both videos, the three
   LiDAR scans; 1.68 GB) and `bench/datasets/release_manifest.json` with SHA-256 per asset; it refuses any photo or
   video carrying GPS metadata (none found). `scripts/fetch_data.sh [prefixes]` downloads from the `data-v1` release,
