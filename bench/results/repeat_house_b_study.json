@@ -1,0 +1,124 @@
+{
+ "capture": "data/raw/photos/house_b_study",
+ "tier": "photos",
+ "pipeline_version": "0.7.0",
+ "runs": 3,
+ "summary": {
+  "short side m": {
+   "runs": [
+    3.0737,
+    3.0737,
+    3.0737
+   ],
+   "mean": 3.0737,
+   "range": 0.0,
+   "std": 0.0
+  },
+  "long side m": {
+   "runs": [
+    3.5567,
+    3.5567,
+    3.5567
+   ],
+   "mean": 3.5567,
+   "range": 0.0,
+   "std": 0.0
+  },
+  "floor area m2": {
+   "runs": [
+    10.7097,
+    10.7097,
+    10.7097
+   ],
+   "mean": 10.7097,
+   "range": 0.0,
+   "std": 0.0
+  },
+  "ceiling m": {
+   "runs": [
+    2.7229,
+    2.7229,
+    2.7229
+   ],
+   "mean": 2.7229,
+   "range": 0.0,
+   "std": 0.0
+  },
+  "openings": {
+   "runs": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "mean": 1.0,
+   "range": 0.0,
+   "std": 0.0
+  },
+  "runtime s": {
+   "runs": [
+    28.9,
+    28.2,
+    26.7
+   ],
+   "mean": 27.9333,
+   "range": 2.2,
+   "std": 1.124
+  },
+  "gates": [
+   [
+    [
+     "wall: short side",
+     true
+    ],
+    [
+     "wall: long side",
+     true
+    ],
+    [
+     "floor area",
+     true
+    ],
+    [
+     "ceiling",
+     false
+    ]
+   ],
+   [
+    [
+     "wall: short side",
+     true
+    ],
+    [
+     "wall: long side",
+     true
+    ],
+    [
+     "floor area",
+     true
+    ],
+    [
+     "ceiling",
+     false
+    ]
+   ],
+   [
+    [
+     "wall: short side",
+     true
+    ],
+    [
+     "wall: long side",
+     true
+    ],
+    [
+     "floor area",
+     true
+    ],
+    [
+     "ceiling",
+     false
+    ]
+   ]
+  ]
+ }
+}

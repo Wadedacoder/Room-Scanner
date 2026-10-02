@@ -9,6 +9,10 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 ## [Unreleased]
 
 ### Added
+- `bench/repeat.py`: reruns a capture N times live (`ROOMSCAN_NO_CACHE=1`, separate guarded processes) and reports
+  the spread of every gated number. Photo tier, study, 3 runs: identical to 4 decimals on walls, area, ceiling and
+  openings; 27.9 ± 1.1 s each. `docs/BENCHMARK.md`: first benchmark report (gates per tier, repeatability, LiDAR drift
+  and self-consistency, connected plans, timing, what is not measured yet and why).
 - **Damage chain (backlog 3.1–3.2), all three tiers.** Pluggable detector → projection onto room surfaces → rules →
   scope. `roomscan/damage/detect_claude.py`: one Claude (`claude-opus-5-5`) vision request per room (≤ 8 views,
   JSON-schema structured output: class + box per image on a 0–1000 grid), server-side fallback enabled
