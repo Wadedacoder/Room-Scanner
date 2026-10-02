@@ -17,7 +17,7 @@ opening widths ≤ 2 cm on ≥ 85%. Walls are scored as the two side lengths aga
 | Tier · capture | Short side | Long side | Floor area | Ceiling | Openings | 90% intervals hold |
 |---|---|---|---|---|---|---|
 | Photos · `house_b_study` (protocol-style, 4 × 0.5× landscape) | 3.074 m, **−1.6% PASS** | 3.557 m, **+4.5% PASS** | 10.71 m², **+0.7% PASS** | 2.723 m, −2.0 cm **FAIL** | not taped | area yes, ceiling yes |
-| Video · `study_walk1.MOV` (off-protocol 1×, after fix loop) | 3.000 m, −4.0% FAIL | 3.168 m, −6.9% FAIL | 9.48 m², −10.8% FAIL | not reported | not taped | area yes |
+| Video · `study_walk1.MOV` (off-protocol 1×, after fix loop) | 3.000 m, −4.0% FAIL | 3.168 m, −6.9% FAIL | 9.48 m², −10.8% FAIL | not reported | 2 doors found, widths not taped | walls yes (since E21's 9.6% term), area yes |
 | LiDAR | no taped LiDAR capture (needs a Pro iPhone) | | | | | |
 
 ```bash
@@ -37,12 +37,13 @@ runs again. Results in `runs/repeat/<capture>/repeat.json` (committed copy: `ben
 | Capture · tier | Runs | Short side | Long side | Floor area | Ceiling | Openings | Gates (each run) | Runtime |
 |---|---|---|---|---|---|---|---|---|
 | `house_b_study` · photos | 3 | 3.0737 m, range 0 | 3.5567 m, range 0 | 10.7097 m², range 0 | 2.7229 m, range 0 | 1, 1, 1 | walls ✓ area ✓ ceiling ✗, identical | 27.9 ± 1.1 s (cached replay: 7.5 s) |
+| `study_walk1.MOV` · video | 3 | 2.9998 m, range 0 | 3.1683 m, range 0 | 9.4841 m², range 0 | not reported | 2, 2, 2 | all ✗ (±3%), identical | 357 ± 34 s (cached: 112 s) |
 
 The photo tier is **bit-for-bit repeatable** on this machine: DA3 runs on MPS with a fixed input order and no sampling,
 and every downstream step is seeded. The runtime gap to a cached replay (28 s vs 7.5 s) confirms the models really ran.
 Repeatability across machines (CUDA vs MPS) is not measured; small float differences there are expected. The video tier
-is seeded and single-threaded in COLMAP (best of 4 seeds), but a live repeat takes ~5 min per run and has not been
-tabulated yet.
+is also identical across 3 live runs (COLMAP reran each time: 330–395 s vs 112 s cached). Before COLMAP was seeded and
+single-threaded, two runs of this video tracked 92 vs 65 frames (E10).
 
 LiDAR is deterministic by construction (no learned model; seeded sampling): two runs of `c7d28f72c6` give identical
 room areas and ceilings (checked in E12's regression run and again after E19).

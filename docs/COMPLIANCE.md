@@ -19,7 +19,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done · ❌ fails gate (repor
 | 13 | Benchmark set composition (P2) | bench/ground_truth/home_tape.yaml, bench/datasets/release_manifest.json | tape + checksummed raw captures | 🟨 1 taped room ⏸ |
 | 14 | Opening width gate (P2) | bench/gates.py | scorer done | ⏸ door widths untaped |
 | 15 | Ceiling height gate + bias/unrepeatable verdict (P2) | bench/gates.py, docs/EXPERIMENTS.md E12 | photos −2.0 cm (fails 1.5 cm, interval holds); bias cause found and fixed (E12) | ❌ reported |
-| 16 | Repeatability gate (P2) | bench/repeat.py, bench/results/ | photos: 3 live runs identical | 🟨 video ⬜ |
+| 16 | Repeatability gate (P2) | bench/repeat.py, bench/results/ | photos and video: 3 live runs each, identical to 4 decimals (bench/results/) | ✅ |
 | 17 | Drift handling + on/off ablation (P2) | roomscan/stitch/drift.py, bench/local/e7_drift_ablation.py | E7: revisit misalignment 19.7 → 3.5 cm | ✅ (no GT) |
 | 18 | Photo-tier whole-property stitch gate (P2) | roomscan/stitch/photo_graph.py | E17–E18: 3 of 6 rooms | 🟨 |
 | 19 | Head-to-head vs magicplan, 2 rooms (P3) | bench/h2h/ (not created yet) | table + export | ⏸ needs a Pro iPhone |
