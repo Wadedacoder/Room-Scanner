@@ -1,0 +1,171 @@
+{
+ "schema_version": "0.1",
+ "capture": {
+  "tier": "video",
+  "source": "data/raw/video/study_walk1.MOV",
+  "pipeline_version": "0.6.1",
+  "device": "iPhone 14 Plus",
+  "drift_correction": "off",
+  "runtime_s": 213.6,
+  "video": {
+   "duration_s": 34.0,
+   "hdr": true,
+   "frames": 272,
+   "registered": 95,
+   "pieces": [
+    95,
+    51,
+    24,
+    18,
+    12
+   ],
+   "keyframes": 40,
+   "focal_px": 874.3,
+   "fov_deg": 57.5,
+   "lens_estimate": "1x wide",
+   "metric_scale_spread": 0.29,
+   "sfm_s": 183.4,
+   "sfm": {
+    "fps": 8.0,
+    "matcher": "sequential",
+    "overlap": 10
+   }
+  },
+  "config_digest": "48d6efa83732"
+ },
+ "rooms": [
+  {
+   "id": "r1",
+   "label": "room 1",
+   "polygon": [
+    [
+     -0.7062,
+     -0.9224
+    ],
+    [
+     2.6645,
+     -0.9224
+    ],
+    [
+     2.6645,
+     1.0824
+    ],
+    [
+     -0.7062,
+     1.0824
+    ]
+   ],
+   "walls": [
+    {
+     "id": "r1.w1",
+     "start": [
+      -0.7062,
+      -0.9224
+     ],
+     "end": [
+      2.6645,
+      -0.9224
+     ],
+     "length": {
+      "value": 3.3707,
+      "lo": 3.1441,
+      "hi": 3.5973,
+      "unit": "m",
+      "coverage": 0.9
+     }
+    },
+    {
+     "id": "r1.w2",
+     "start": [
+      2.6645,
+      -0.9224
+     ],
+     "end": [
+      2.6645,
+      1.0824
+     ],
+     "length": {
+      "value": 2.0048,
+      "lo": 1.8649,
+      "hi": 2.1447,
+      "unit": "m",
+      "coverage": 0.9
+     }
+    },
+    {
+     "id": "r1.w3",
+     "start": [
+      2.6645,
+      1.0824
+     ],
+     "end": [
+      -0.7062,
+      1.0824
+     ],
+     "length": {
+      "value": 3.3707,
+      "lo": 3.1441,
+      "hi": 3.5973,
+      "unit": "m",
+      "coverage": 0.9
+     }
+    },
+    {
+     "id": "r1.w4",
+     "start": [
+      -0.7062,
+      1.0824
+     ],
+     "end": [
+      -0.7062,
+      -0.9224
+     ],
+     "length": {
+      "value": 2.0048,
+      "lo": 1.8649,
+      "hi": 2.1447,
+      "unit": "m",
+      "coverage": 0.9
+     }
+    }
+   ],
+   "openings": [],
+   "floor_area": {
+    "value": 6.7575,
+    "lo": 5.2018,
+    "hi": 8.3132,
+    "unit": "m2",
+    "coverage": 0.9
+   },
+   "perimeter": {
+    "value": 10.751,
+    "lo": 10.3743,
+    "hi": 11.1276,
+    "unit": "m",
+    "coverage": 0.9
+   },
+   "ceiling_height": null
+  }
+ ],
+ "adjacency": [],
+ "property": {
+  "footprint_area": {
+   "value": 6.7575,
+   "lo": 5.2018,
+   "hi": 8.3132,
+   "unit": "m2",
+   "coverage": 0.9
+  }
+ },
+ "damage": [],
+ "concealed_flags": [],
+ "scope": [],
+ "warnings": [
+  "r1: ceiling not observed well enough to measure; no value reported",
+  "camera tracking covered only 35% of the video (6 pieces); rooms seen only in the untracked part are missing",
+  "estimated lens 1x wide (58\u00b0 wide); the protocol asks for 0.5x",
+  "HDR video: converted to standard range for processing (the protocol asks for HDR off)",
+  "video-tier intervals use a 4% scale term from proxy experiments; not yet calibrated",
+  "openings, adjacency, damage and scope are not implemented yet"
+ ]
+}
