@@ -43,9 +43,10 @@ def run_lidar(path, cfg) -> tuple[dict, dict]:
                                     "revisit_misalignment_cm": [round(drift.residual_before_cm, 1),
                                                                 round(drift.residual_after_cm, 1)]}
     plan["rooms"] = res.rooms
+    plan["adjacency"] = res.adjacency or []
     plan["property"] = {"footprint_area": res.footprint}
     plan["warnings"] = res.warnings + [
-        "openings, adjacency, damage and scope are not implemented yet",
+        "damage and scope are not implemented yet",
         "intervals are propagated, not yet calibrated against ground truth"]
     timing["total"] = time.time() - t0
     plan["capture"]["runtime_s"] = round(timing["total"], 1)

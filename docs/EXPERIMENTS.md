@@ -409,3 +409,21 @@ Result on house_b: **3 of 6 rooms connected** (living, kitchen, bathroom), no ov
 does not line up with a living-room door (nearest > 2.5 m away), consistent with it opening onto the hall. Hall
 connector photos (4644, 4652) did not add links (best 43 matches, rejected by the agreement test). Bedroom, store and
 study have no photo that sees into another room.
+
+## E19: Room adjacency on LiDAR (2026-10-02)
+
+LiDAR rooms come from one cloud, so they are already in one frame; adjacency is filled from:
+* **shared door:** an opening detected from both rooms within 0.6 m of each other (both get `connects_to`);
+* **open passage:** the two rooms plus the carved (ray-crossed) floor directly between them (within ~20 cm of both)
+  form one connected region.
+
+| Attempt for open passages | c00a170fe1 | c7d28f72c6 |
+|---|---|---|
+| masks within 6 cm | none found | none found |
+| masks within 20 cm | + living–bathroom (**false**: across a wall) | + r3–r4 (suspect) |
+| … minus detected wall cells | false link remains (that wall wasn't detected) | |
+| connected carved floor, any loose floor | links almost every pair (through other rooms' surroundings) | 10 links |
+| **connected carved floor directly between the two** | corridor–bathroom (door), living–corridor (passage), living–bathroom (passage, unverified) | r1–r3, r2–r3, r2–r5 (doors), r1–r4 (passage) |
+
+The c00a living–bathroom passage is probably false (the walk went living → corridor → bathroom) but can't be checked
+without the space. Kept as a known issue.

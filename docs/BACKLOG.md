@@ -31,7 +31,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | 2.1 | Video: join COLMAP pieces (DA3 through turns, E5) | P1 video | ⬜ |
 | 2.2 | Video: score house_b_walk.MOV (212 s, 6 rooms) | P2 | ⬜ |
 | 2.3 | Photo intervals calibrated (coverage ≈ 90%) | P2 calibration | ⬜ |
-| 2.4 | LiDAR open-passage adjacency between split rooms | P2 adjacency | ⬜ |
+| 2.4 | LiDAR open-passage adjacency between split rooms | P2 adjacency | ✅ E19 (one unverified passage) |
 
 ## Contract items not started
 | # | Item | Serves | Status |

@@ -60,6 +60,7 @@ class BackendResult:
     warnings: list[str]
     footprint: dict
     debug: dict
+    adjacency: list = None
 
 
 def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, voxel: float,
@@ -168,8 +169,59 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
         total_area += area
         total_var += area_sig ** 2
     footprint = meas(total_area, float(np.sqrt(total_var)), "m2")
+    adjacency = _adjacency(rooms, masks if split else [], maps.grid, maps.interior) if len(rooms) > 1 else []
     return BackendResult(rooms, warnings, footprint,
-                         {"theta": theta, "maps": maps, "masks": masks, "levels": lev, "camera_height_m": cam_h})
+                         {"theta": theta, "maps": maps, "masks": masks, "levels": lev, "camera_height_m": cam_h},
+                         adjacency)
+
+
+def _adjacency(rooms: list[dict], masks: list, grid, interior=None, door_match_m: float = 0.6) -> list[dict]:
+    """Room pairs that connect, in one shared frame (LiDAR, video):
+    door  : an opening detected from both rooms at the same place (within door_match_m); both get connects_to;
+    open  : the rooms' floor areas touch (the watershed cut an open passage; no wall between them)."""
+    import cv2
+
+    out, seen = [], set()
+    for i, a in enumerate(rooms):
+        for j in range(i + 1, len(rooms)):
+            b = rooms[j]
+            best = None
+            for oa in a["openings"]:
+                for ob in b["openings"]:
+                    if oa["type"] == "window" or ob["type"] == "window":
+                        continue
+                    d = float(np.hypot(*(np.array(oa["centre_plan"]) - np.array(ob["centre_plan"]))))
+                    if d < door_match_m and (best is None or d < best[0]):
+                        best = (d, oa, ob)
+            if best:
+                _, oa, ob = best
+                oa["connects_to"], ob["connects_to"] = b["id"], a["id"]
+                out.append({"a": a["id"], "b": b["id"], "via": oa["id"]})
+                seen.add((i, j))
+    if masks and len(masks) == len(rooms) and interior is not None:
+        # open passage = one continuous stretch of floor the LiDAR rays crossed, from one room into the other.
+        # Across a wall there is always a break (rays stop short of each wall face), even where the wall itself was
+        # not detected (E19: "touching" masks linked living and bathroom across their shared wall).
+        union_all = np.zeros_like(masks[0], bool)
+        for m in masks:
+            union_all |= m
+        loose = interior & ~union_all  # carved floor the watershed cleanup left unassigned (the cut zones)
+        for i in range(len(rooms)):
+            for j in range(i + 1, len(rooms)):
+                if (i, j) in seen:
+                    continue
+                # only floor directly between the two rooms (within ~20 cm of both) may bridge them; the full loose
+                # set connected nearly every room pair through other rooms' surroundings
+                k20 = np.ones((21, 21), np.uint8)
+                near = (cv2.dilate(masks[i].astype(np.uint8), k20).astype(bool)
+                        & cv2.dilate(masks[j].astype(np.uint8), k20).astype(bool))
+                region = (masks[i] | masks[j] | (loose & near)).astype(np.uint8)
+                region = cv2.dilate(region, np.ones((2, 2), np.uint8))  # bridge 1-cell cracks only
+                n, lab = cv2.connectedComponents(region, connectivity=4)
+                li, lj = np.unique(lab[masks[i]]), np.unique(lab[masks[j]])
+                if set(li[li > 0]) & set(lj[lj > 0]):
+                    out.append({"a": rooms[i]["id"], "b": rooms[j]["id"], "via": "open passage"})
+    return out
 
 
 def empty_plan(tier: str, source: str) -> dict:

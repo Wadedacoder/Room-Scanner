@@ -8,6 +8,11 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Added
+- LiDAR adjacency (`plan.json` `adjacency`, openings' `connects_to`): shared doors seen from both rooms, and open
+  passages (connected ray-crossed floor directly between two rooms). Checked (E19): c7d28f72c6 3 door links + 1 passage;
+  c00a170fe1 corridor–bathroom door and living–corridor passage, plus one probably-false living–bathroom passage.
+
 ### Changed
 - Capture protocol: one photo per doorway taken *through* it into the next room (within the 8 per room). Why (E14,
   E17, E18): rooms join only where a photo sees into the neighbouring room (kitchen↔living 99 matches, bathroom↔living
