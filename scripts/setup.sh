@@ -2,10 +2,10 @@
 # Clean-machine setup: uv + Python 3.11 venv + package.
 #   ./scripts/setup.sh            regular install (what graders / the walk-in machine should use)
 #   ./scripts/setup.sh --dev      editable install for development
-# Extras default to "geo,dev"; override with EXTRAS=geo,ml,dev ./scripts/setup.sh
+# Extras default to "geo,vlm,dev"; override with EXTRAS=geo,vlm,web,dev ./scripts/setup.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
-EXTRAS="${EXTRAS:-geo,dev}"
+EXTRAS="${EXTRAS:-geo,vlm,dev}"
 command -v uv >/dev/null || { curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$PATH"; }
 uv venv -p 3.11 --allow-existing -q
 if [ "${1:-}" = "--dev" ]; then

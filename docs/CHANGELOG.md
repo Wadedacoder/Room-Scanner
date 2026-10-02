@@ -8,6 +8,12 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Fixed (found by the clean-machine README test)
+- Every run (all tiers) crashed with `No module named 'anthropic'` when the damage extra wasn't installed: the damage
+  stage now treats a missing SDK like missing credentials (warning, empty damage, geometry ships); `vlm` is in the
+  default setup extras; regression test added.
+- `scripts/setup_models.sh` didn't install `kornia` (photo cross-room links), so its weight prefetch failed.
+
 ### Health watch
 - 2026-10-03 00:19 FAIL (job > 20 min): the house video (`house_b_walk.MOV`, 1698 frames at 8 fps) is in COLMAP
   mapping, not stuck: matching finished 00:13, seed 0 of 4 finished 00:20 with 6 pieces. Left running (~45 min

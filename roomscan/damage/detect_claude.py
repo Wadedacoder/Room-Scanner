@@ -89,8 +89,10 @@ def detect_room(images: list[np.ndarray], cfg, cache_root: Path) -> tuple[list[d
     if mode == "replay":
         raise FileNotFoundError(f"damage.cache=replay but no cached response at {path}")
 
-    import anthropic
-
+    try:
+        import anthropic
+    except ImportError:
+        raise NoCredentials("the anthropic package is not installed (pip install 'roomscan[vlm]')") from None
     try:
         client = anthropic.Anthropic()
         content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": e}}

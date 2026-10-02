@@ -21,7 +21,7 @@ Tier is auto-detected: a Stray Scanner folder means LiDAR, a `.MOV`/`.mp4` file 
 ## Test it yourself (local website)
 
 ```bash
-EXTRAS=geo,web,dev ./scripts/setup.sh && ./scripts/setup_models.sh   # once
+EXTRAS=geo,vlm,web,dev ./scripts/setup.sh && ./scripts/setup_models.sh   # once
 .venv/bin/roomscan serve                                              # then open http://localhost:8765
 ```
 

@@ -8,7 +8,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 DA3_COMMIT=3d835ec
 UV="$(command -v uv || echo "$HOME/.local/bin/uv")"
-"$UV" pip install -q torch torchvision pycolmap huggingface_hub safetensors addict einops omegaconf evo plyfile \
+"$UV" pip install -q torch torchvision kornia pycolmap huggingface_hub safetensors addict einops omegaconf evo plyfile \
   "moviepy==1.0.3"
 "$UV" pip install -q --no-deps "git+https://github.com/ByteDance-Seed/depth-anything-3@${DA3_COMMIT}"
 # pycolmap and torch each bundle libomp and abort if loaded in one process (OMP Error #15): the pipeline runs

@@ -63,3 +63,25 @@ def test_room_damage_stage_projects_merges_and_finalizes():
     finalize(plan, regions)
     assert plan["damage"][0]["id"] == "D1" and "source" not in plan["damage"][0]
     assert {s["code"] for s in plan["scope"]} == {"DRY-SEAL", "PNT-WALL"}
+
+
+def test_missing_sdk_or_key_degrades_to_warning(monkeypatch):
+    import builtins
+
+    from roomscan.damage.stage import room_damage
+
+    real_import = builtins.__import__
+
+    def no_anthropic(name, *a, **k):
+        if name == "anthropic":
+            raise ImportError("no anthropic")
+        return real_import(name, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", no_anthropic)
+    K, depth, c2w, walls = _wall_view()
+    room = {"id": "r", "walls": walls, "ceiling_height": None}
+    cfg = {"damage": {"backend": "vlm", "keyframes_per_room": 4, "vlm_model": "m", "cache": "replay_or_live"}}
+    warns = []
+    out = room_damage(room, [np.zeros((200, 200, 3), np.uint8)], depth[None], K[None], c2w[None], 0.0, 0.0, None,
+                      cfg, "/nonexistent-cache", warns)
+    assert out == [] and "detector unavailable" in warns[0] and cfg["damage"]["backend"] == "off"

@@ -44,9 +44,9 @@ def room_damage(room: dict, images, depth: np.ndarray, K: np.ndarray, c2w: np.nd
 
         try:
             raw, source = dc.detect_room(imgs, cfg, cache_root)
-        except dc.NoCredentials:
-            warnings.append("damage: no Claude credentials (set ANTHROPIC_API_KEY); damage, concealed flags and scope "
-                            "are empty for this run")
+        except dc.NoCredentials as e:
+            warnings.append(f"damage: detector unavailable ({str(e)[:120]}; set ANTHROPIC_API_KEY); damage, concealed "
+                            "flags and scope are empty for this run")
             cfg["damage"]["backend"] = "off"  # don't retry for every room
             return []
         except FileNotFoundError as e:
