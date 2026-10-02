@@ -155,3 +155,36 @@ revisits), and the graph returned no correction at all. Replaced.
 * On the short walk no revisit passed the acceptance test, so nothing is changed. This is deliberate: a weak match
   should not move the plan.
 * Speed: matching on 4 cm images with a coarse-then-fine yaw search took the step from ~12 min to ~110 s.
+
+## E8: Photo tier on a real capture (study, iPhone 14 Plus), first tape scores (2026-10-02)
+
+13 HEIC stills taken in one turn from the middle of the study, grouped into 8 variants by lens and orientation
+(`.claude/worktrees/study-photo-variants/bench/datasets/study_photo_variants.yaml`; not protocol-compliant: only one
+landscape 0.5× photo exists). Tape: walls 350.5 / 330.2 / 312.4 / 312.4 cm (not yet assigned to walls; the long-side
+pair differs because of a cove), ceiling 274.3 cm. Scorer: `bench/score_study.py` (order-free: short side, long side
+against the 330–351 cm band, area against 10.3–10.9 m², interval coverage). Pipeline 0.3.0 + lite profile at 3 views.
+
+| Variant | Photos | Area m² (err) | Short / long side m | 90% interval contains truth |
+|---|---|---|---|---|
+| portrait_mixed (0.5× + 1×) | 7 | 9.49 (−8%) | 2.83 / 3.35 | yes |
+| w1x_landscape | 3 | 13.48 (+25%) | 3.50 / 3.85 | yes |
+| landscape_mixed (3 intrinsics) | 6 | 16.53 (+54%) | 3.95 / 4.19 | no |
+| uw05_portrait | 4 | 7.15 (−31%) | 2.38 / 3.26 | no |
+| uwcrop (2 photos) | 2 | 7.52 (−27%) | 2.54 / 2.96 | no |
+| w1x_portrait | 3 | 1.01 (−90%) | 0.65 / 1.56 | no |
+| uw05 (portrait + landscape) | 5 | crashed: out of GPU memory | n/a | n/a |
+| w1x (portrait + landscape) | 6 | crashed: depth maps of different shapes in one window | n/a | n/a |
+
+* **The photo tier is not reliable yet on real photos:** −90% … +54% area, 2 of 6 intervals contain the truth. That is
+  the "confident garbage" the brief penalises; the intervals must widen (or the run must refuse) until this improves.
+* Ceiling never reported (none of these photos see enough ceiling). Correct behaviour, but no ceiling score yet.
+* Mixed portrait/landscape in one room folder breaks windowed inference. The protocol forbids it, but the walk-in
+  test runs whatever is captured: fix by resizing every view to one shape or grouping windows by orientation.
+* These sets are not protocol captures; the 8-photo landscape 0.5× ring is still the test that matters.
+
+### The laptop crash during this experiment (17:25–17:44)
+The first E8 run froze the 8 GB M1 (the reset report shows a forced power-button restart, not a kernel panic).
+Measured afterwards: the photo pipeline held **4.46 GB of GPU (MPS) memory**, invisible in process memory, and free
+system memory fell to **1%**. Fixes (0.3.1): GPU memory cap in the lite profile (MPS allocations fail cleanly instead of
+starving macOS), one model loaded at a time, the metric model run one image per call, 3 views per window, and
+`scripts/run_guarded.sh` for long benchmark loops. Re-run peak: 2.43 GB GPU, < 1.9 GB process, no freeze.

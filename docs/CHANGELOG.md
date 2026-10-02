@@ -8,7 +8,28 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-10-02 · drift correction · tag `v0.3.0` (commit 2ff3029)
+## [0.3.1] - 2026-10-02 · memory safety after the laptop crash · tag `v0.3.1`
+
+### Fixed
+- **The photo pipeline could freeze an 8 GB Mac.** The first real-photo benchmark (E8) held 4.46 GB of Apple-GPU
+  memory; that memory is shared with macOS and invisible in process memory, free RAM fell to 1% and the laptop needed
+  a forced restart.
+  - How: `runtime.gpu_memory_fraction` caps MPS memory (lite: 0.6 of the 5.33 GB recommended working set = 3.2 GB;
+    over the cap torch raises out-of-memory instead of starving the OS). Models are loaded one at a time and freed;
+    the metric model runs one image per call (it is monocular, so results are identical); lite windows 4 → 3 views,
+    because 4 views went over 3.2 GB on MPS.
+  - Checked: same run, peak 2.43 GB GPU and < 1.9 GB process memory, 26 s instead of 154 s (no swapping).
+- Note: the cap is relative to the GPU working set, not RAM (0.4 meant 2.13 GB, not 3.2 GB). Documented in the profile.
+
+### Added
+- `scripts/run_guarded.sh`: kills a run whose process memory passes a limit; used for every benchmark loop.
+- `bench/score_study.py`: order-free tape scoring of the real study capture (E8).
+
+### Known issues (E8, real photos)
+- Photo-tier areas −90% … +54% across the study variants; only 2 of 6 intervals contain the truth.
+- Portrait and landscape photos in one room folder crash windowed inference (out of memory, or shape mismatch).
+
+## [0.3.0] - 2026-10-02 · drift correction · tag `v0.3.0` (code in 2ff3029, tag on the changelog commit after it)
 
 ### Added
 - **LiDAR drift correction, on by default** (`roomscan/stitch/drift.py`). The walk is cut into ~4 s fragments; where
