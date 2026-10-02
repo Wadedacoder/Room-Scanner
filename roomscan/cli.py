@@ -77,7 +77,26 @@ def run(
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "config.resolved.yaml").write_text(cfg.dump())
     typer.echo(f"tier={tier} profile={cfg.profile} device={cfg['runtime']['device']} config={cfg.digest}")
-    raise typer.Exit(f"pipeline for tier '{tier}' not implemented yet")
+    if tier != "lidar":
+        raise typer.Exit(f"pipeline for tier '{tier}' not implemented yet")
+    import jsonschema
+
+    from roomscan.pipeline.lidar import run_lidar
+    from roomscan.render.svg import render_svg
+
+    plan, _ = run_lidar(capture, cfg)
+    plan["capture"]["config_digest"] = cfg.digest
+    schema = json.loads((Path(__file__).resolve().parents[1] / "schema/plan.schema.json").read_text())
+    jsonschema.validate(plan, schema)
+    (run_dir / "plan.json").write_text(json.dumps(plan, indent=1))
+    (run_dir / "plan.svg").write_text(render_svg(plan))
+    for r in plan["rooms"]:
+        c = r["ceiling_height"]
+        ceil = "not observed" if c is None else f"{c['value']:.3f} m"
+        typer.echo(f"  {r['id']}: {r['floor_area']['value']:.2f} m2, {len(r['walls'])} walls, ceiling {ceil}")
+    for w in plan["warnings"]:
+        typer.echo(f"  ! {w}")
+    typer.echo(f"wrote {run_dir}/plan.json, plan.svg in {plan['capture']['runtime_s']} s")
 
 
 if __name__ == "__main__":
