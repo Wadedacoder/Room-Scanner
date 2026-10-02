@@ -61,16 +61,20 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("capture", type=Path)
     ap.add_argument("-o", "--out", type=Path, default=ROOT / "data/derived/eval_bundle")
-    ap.add_argument("--video-frames", type=int, default=60)
+    ap.add_argument("--video-frames", type=int, nargs="+", default=[60, 120])
+    ap.add_argument("--video-only", action="store_true", help="add/refresh video sets, keep existing photo sets")
     args = ap.parse_args()
 
     cap = StrayCapture.open(args.capture)
     name = args.capture.resolve().name
-    shutil.rmtree(args.out, ignore_errors=True)
+    if not args.video_only:
+        shutil.rmtree(args.out, ignore_errors=True)
     _, _, upx = frame_angles(cap.poses)
 
-    sets = []
-    for gt_dir in sorted((ROOT / "data/derived/photos_gt").glob(f"{name}_*_n*")):
+    sets = [] if not args.video_only else [
+        s for s in json.loads((args.out / "index.json").read_text())["sets"] if s.startswith("photos_")]
+    photo_dirs = [] if args.video_only else sorted((ROOT / "data/derived/photos_gt").glob(f"{name}_*_n*"))
+    for gt_dir in photo_dirs:
         mode, n = gt_dir.name[len(name) + 1:].rsplit("_n", 1)
         for room_json in sorted(gt_dir.glob("*.json")):
             meta = json.loads(room_json.read_text())
@@ -83,16 +87,17 @@ def main() -> None:
             write_set(args.out / set_name, cap, items)
             sets.append(set_name)
 
-    # rgb.mp4 has one frame fewer than odometry.csv
-    idxs = np.linspace(0, len(cap) - 2, args.video_frames).round().astype(int)
-    raw = read_frames(args.capture, idxs)
-    clip_upx = float(np.median(upx[idxs]))  # a real clip has ONE orientation: majority vote, not per frame
-    items = []
-    for j, idx in enumerate(idxs, 1):
-        img, K, k90 = upright(raw[int(idx)], cap.K, clip_upx)
-        items.append((f"FRAME_{j:04d}.jpg", int(idx), img, K, k90))
-    write_set(args.out / f"video{args.video_frames}", cap, items)
-    sets.append(f"video{args.video_frames}")
+    for nv in args.video_frames:
+        # rgb.mp4 has one frame fewer than odometry.csv
+        idxs = np.linspace(0, len(cap) - 2, nv).round().astype(int)
+        raw = read_frames(args.capture, idxs)
+        clip_upx = float(np.median(upx[idxs]))  # a real clip has ONE orientation: majority vote, not per frame
+        items = []
+        for j, idx in enumerate(idxs, 1):
+            img, K, k90 = upright(raw[int(idx)], cap.K, clip_upx)
+            items.append((f"FRAME_{j:04d}.jpg", int(idx), img, K, k90))
+        write_set(args.out / f"video{nv}", cap, items)
+        sets.append(f"video{nv}")
 
     (args.out / "index.json").write_text(json.dumps({"source_capture": name, "sets": sets}, indent=1))
     print(f"{len(sets)} sets -> {args.out}")

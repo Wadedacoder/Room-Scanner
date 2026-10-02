@@ -40,3 +40,22 @@ out of memory at 6. Every model ran out of memory on the 60-frame video.
 
 ### Speed
 On a T4, Base takes 0.4–2.1 s per set and Giant 3–11 s. Runtime is not the bottleneck; memory is.
+
+## E2: Windowed DA3, sweep vs spread photo selection (2026-10-02)
+
+Job `bench/kaggle/model_eval_v2/`. DA3 now runs through the pipeline's own `roomscan.recon.windows` (overlapping windows
+chained by a similarity transform on the shared views), with T4 window sizes (Base/Large 8, Giant 4) and overlap 2.
+
+| Model | Photo views registered (spread / sweep) | Video60 registered | Scale, true focal | s per set |
+|---|---|---|---|---|
+| DA3-Base | 41/60 · 40/60 | 12/60 | −1.0% … −6.9% | 1.4 |
+| DA3-Large-1.1 | 51/60 · 41/60 | 0/60 | −0.7% … −9.3% | 3.7 |
+| DA3-Giant-1.1 | 47/60 · 39/60 | 4/60 | −1.3% … −6.2% | 12 |
+| DA3Metric mono | n/a | n/a | −1.4% … −5.9% | 2 |
+
+* Memory: no out-of-memory errors anywhere; windowing makes 60 views fit on 16 GB.
+* Sweep vs spread: no gain, but this is **inconclusive**. The proxy "sweep" still has 135–163° gaps, because the walk
+  never looked in those directions. Real 0.5× ring photos are needed to settle it.
+* Video: chaining 10 windows with overlap 2 drifts; a bad link corrupts every later frame. E3 tries more overlap,
+  denser frames, and MapAnything without chaining.
+* MapAnything did not run (dependency `hydra` is published on pip as `hydra-core`); fixed in E3.
