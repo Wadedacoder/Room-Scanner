@@ -25,6 +25,9 @@ class Recon:
 
 
 class LearnedRecon:
+    """Loads ONE model at a time (geometry, then metric) and frees it after use: on an 8 GB laptop two resident
+    models plus activations exhausted shared GPU memory (see lite profile, gpu_memory_fraction)."""
+
     def __init__(self, cfg):
         import torch
 
@@ -33,11 +36,26 @@ class LearnedRecon:
         rc = cfg["recon"]
         dev = cfg["runtime"]["device"]
         self.device = dev if (dev != "mps" or torch.backends.mps.is_available()) else "cpu"
-        DA3 = load_da3_class()
-        self.model = DA3.from_pretrained(models.get(rc["model"]).hf_repo).to(self.device).eval()
-        self.metric = DA3.from_pretrained(models.get(rc["metric_model"]).hf_repo).to(self.device).eval()
+        frac = float(cfg["runtime"].get("gpu_memory_fraction", 0.0) or 0.0)
+        if self.device == "mps" and frac > 0:
+            torch.mps.set_per_process_memory_fraction(frac)
+        self.DA3 = load_da3_class()
+        self.repos = (models.get(rc["model"]).hf_repo, models.get(rc["metric_model"]).hf_repo)
         self.win, self.overlap, self.res = rc["max_views"], rc["window_overlap"], rc["image_long_side"]
         self.torch = torch
+
+    def _load(self, repo):
+        return self.DA3.from_pretrained(repo).to(self.device).eval()
+
+    def _free(self, model):
+        del model
+        import gc
+
+        gc.collect()
+        if self.device == "mps":
+            self.torch.mps.empty_cache()
+        elif self.device == "cuda":
+            self.torch.cuda.empty_cache()
 
     def _infer(self, model, imgs):
         with self.torch.inference_mode():
@@ -47,18 +65,24 @@ class LearnedRecon:
         n = len(images)
         overlap = min(self.overlap, self.win - 1)
 
+        model = self._load(self.repos[0])
+
         def predict(idx):
-            p = self._infer(self.model, [images[i] for i in idx])
+            p = self._infer(model, [images[i] for i in idx])
             E = np.tile(np.eye(4), (len(idx), 1, 1))
             E[:, :3, :4] = p.extrinsics
             return WindowPrediction(np.linalg.inv(E), p.depth, p.conf, p.intrinsics)
 
         st = run_windowed(n, self.win, overlap, predict)
+        self._free(model)
         h, w = st.depth.shape[1:]
         sx = w / images[0].shape[1]
         K = K_full.copy()
         K[:, :2] *= sx
-        raw = np.concatenate([self._infer(self.metric, images[i:i + self.win]).depth for i in range(0, n, self.win)])
+        metric_model = self._load(self.repos[1])
+        # DA3Metric is monocular: one image per call gives identical depth with a fraction of the activation memory
+        raw = np.concatenate([self._infer(metric_model, [images[i]]).depth for i in range(n)])
+        self._free(metric_model)
         metric = raw * K[:, 0, 0][:, None, None] / 300.0  # DA3Metric convention: depth = focal * out / 300
         valid = (st.depth > 1e-4) & np.isfinite(metric) & (st.conf >= np.percentile(st.conf, 30))
         k = float(np.median(metric[valid] / st.depth[valid]))

@@ -1,9 +1,14 @@
 # Floor profile: any machine with <16 GB RAM or no usable GPU (e.g. M1 8 GB). Must always run.
 description: "<=8-16 GB RAM, CPU or small Apple GPU"
+runtime:
+  # 2026-10-02: an uncapped photo run held 4.46 GB of MPS memory on the 8 GB M1, free memory fell to 1% and the
+  # laptop froze. The fraction is of macOS's recommended GPU working set (5.33 GB on the M1 8 GB), not of RAM:
+  # 0.6 = 3.2 GB. Over the cap, torch raises out-of-memory instead of starving macOS.
+  gpu_memory_fraction: 0.6
 recon:
   model: da3-base
   metric_model: da3metric-large
-  max_views: 4             # E1: Base peaks 2.4 GB @4 views, 7.3 GB @8 (T4) -> 4 on an 8 GB laptop
+  max_views: 3             # MPS needs more than the T4 (no fused attention): 4 views went over 3.2 GB; 3 peaks 2.43 GB
   image_long_side: 504
   video_keyframes: 40
 lidar:

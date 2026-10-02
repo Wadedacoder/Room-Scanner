@@ -6,6 +6,8 @@ runtime:
   device: auto              # auto | cpu | mps | cuda
   dtype: float32            # float32 | float16 | bfloat16 (half precision only on cuda)
   num_threads: 0            # 0 = library default
+  gpu_memory_fraction: 0.0  # cap on Apple-GPU (MPS) memory as a share of RAM; 0 = no cap. MPS memory is shared
+                            # with macOS and invisible to process RSS, so an uncapped run can freeze the machine.
   seed: 0
   cache_dir: cache
   weights_dir: weights

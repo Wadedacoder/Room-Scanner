@@ -24,7 +24,7 @@ The pipeline picks a profile for the machine it runs on. Stronger machines get l
 
 | Profile | Picked when | Photo/video model | Views/pass | LiDAR stride / voxel |
 |---|---|---|---|---|
-| `lite` | anything else (e.g. M1 8 GB, CPU-only) | DA3-Base + DA3Metric-Large | 4 | 4 / 2 cm |
+| `lite` | anything else (e.g. M1 8 GB, CPU-only) | DA3-Base + DA3Metric-Large, GPU memory capped at 3.2 GB | 3 | 4 / 2 cm |
 | `mac-16gb` | Apple silicon ≥ 16 GB | DA3-Large-1.1 | 6 | 2 / 1 cm |
 | `mac-32gb` | Apple silicon ≥ 32 GB | DA3-Large-1.1 | 8 | 1 / 1 cm |
 | `cuda-16gb` | NVIDIA 12–23 GB (Kaggle T4/P100) | DA3-Giant-1.1 (fp16) | 4 | 1 / 1 cm |
