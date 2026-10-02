@@ -114,6 +114,7 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
     if edges:
         debug["wall_snaps"] = _snap_shared_walls({r: per_room[r] for r in placed}, edges)
     plan["adjacency"] = [{"a": e["a"], "b": e["b"], "via": f"visual-link ({e['matches']} matches)"} for e in edges]
+    _pair_doors(per_room, plan["adjacency"])
     unplaced = [r for r in per_room if r not in placed]
     if placed and unplaced:
         warnings.append(f"connected {len(placed)} of {len(per_room)} rooms; not linked (drawn to the side): "
@@ -234,3 +235,23 @@ def _snap_shared_walls(rooms: dict, edges: list[dict]) -> list[dict]:
         log.append({"a": e["a"], "b": e["b"], "snapped": True, "moved_m": round(float(np.hypot(*delta)), 3),
                     "doors_aligned": door_pair is not None})
     return log
+
+
+def _pair_doors(rooms: dict, adjacency: list[dict], max_d: float = 0.8) -> None:
+    """For each linked room pair, the two doors that coincide after placement (closest pair within max_d; photo
+    door centres are +-20 cm, E15) get connects_to, and the adjacency names the door. Unlinked rooms are not placed
+    by door geometry: on house_b the only candidate (study, one weak 0.70 m door) fits two free doors equally (E25)."""
+    for a in adjacency:
+        ra, rb = rooms[a["a"]], rooms[a["b"]]
+        best = None
+        for oa in ra["openings"]:
+            for ob in rb["openings"]:
+                if "window" in (oa["type"], ob["type"]) or "centre_plan" not in oa or "centre_plan" not in ob:
+                    continue
+                d = float(np.hypot(*(np.array(oa["centre_plan"]) - np.array(ob["centre_plan"]))))
+                if d < max_d and (best is None or d < best[0]):
+                    best = (d, oa, ob)
+        if best:
+            _, oa, ob = best
+            oa["connects_to"], ob["connects_to"] = rb["id"], ra["id"]
+            a["via"] += f", door {oa['id']}↔{ob['id']} ({best[0]:.2f} m apart)"

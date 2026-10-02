@@ -516,3 +516,26 @@ no visible damage (each detection was checked by eye).
 * **Recall is not measured** (no staged-damage captures). The detector may miss faint stains; nothing here says how often.
 * Cost: ~6.5 s per photo on the M1 CPU, ~0.9 GB; house_b full run 93 s with DA3 replayed. Outputs are cached in
   `cache/vlm/owlv2_*.json` (committed) like the Claude responses.
+
+## E25: Placing unlinked photo rooms by door geometry? (2026-10-03) · not done, and why
+
+Question: can rooms with no visual link (study, bedroom, store in house_b) be placed by matching their doors to free
+doors of placed rooms? Detected openings (pipeline 0.7.x):
+
+| Room | Linked | Doors (width, evidence) |
+|---|---|---|
+| living | yes | 0.80 gap, 0.55 see-through |
+| kitchen | yes | 0.95 see-through |
+| bathroom | yes | 0.75 gap, 0.55 see-through |
+| study | no | 0.70 gap (weak) |
+| bedroom | no | none (a 1.30 m window) |
+| store | no | none (a 0.85 m window) |
+
+* Bedroom and store have no detected door, so there is nothing to match.
+* The study's one door fits both free doors (living 0.80, bathroom 0.75) within the ±20 cm photo tolerance, at
+  several orientations each. Any choice would be a guess, and the plan's rule is that an unknown placement is drawn to
+  the side with a warning, not guessed. A placement rule that requires a *unique* fit would place nothing here.
+* What was done instead: on rooms that *are* linked, the doors that coincide after placement are paired
+  (`connects_to` on both, the adjacency names the door pair). house_b: living.o2 ↔ kitchen.o1 (0.65 m apart);
+  living ↔ bathroom has no door pair within 0.8 m, so none is claimed.
+* The fix for unlinked rooms remains the protocol's look-through photo per doorway (E14, backlog 0.7).

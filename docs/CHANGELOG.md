@@ -38,6 +38,8 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   expected); a 212 s walk at 8 fps with best-of-4 single-threaded mapping is ~7 min per seed on the M1.
 
 ### Added
+- Photo tier pairs the doors of visually linked rooms (`connects_to` + adjacency names the door pair); E25 explains
+  why unlinked rooms are not placed by door geometry (house_b: no unique fit).
 - **Local damage detector, no API key** (E24): OWLv2 (Apache-2.0) is the default `damage.backend`; Claude is optional.
   Negative queries + a crack threshold give 0 false detections on the 17 clean house photos (in-sample); recall
   unmeasured. Weights prefetched by `setup_models.sh`; outputs cached in `cache/vlm/`.
