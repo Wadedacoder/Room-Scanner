@@ -59,3 +59,50 @@ chained by a similarity transform on the shared views), with T4 window sizes (Ba
 * Video: chaining 10 windows with overlap 2 drifts; a bad link corrupts every later frame. E3 tries more overlap,
   denser frames, and MapAnything without chaining.
 * MapAnything did not run (dependency `hydra` is published on pip as `hydra-core`); fixed in E3.
+
+## E3: Video strategies on Kaggle, plus MapAnything (2026-10-02)
+
+Job `bench/kaggle/model_eval_v3/`. Video sets of 60 and 120 frames (`c00a170fe1`, 37 s walk).
+
+| Strategy | Frames registered (< 10°) | Median rotation error | Position error (m) |
+|---|---|---|---|
+| DA3-Base, window 8, overlap 2, 60 frames | 12/60 | 28.9° | 0.78 |
+| DA3-Base, window 8, overlap 2, **120 frames** | 21/120 | **4.5°** | 0.36 |
+| DA3-Base, window 8, overlap 4, 120 frames | 16/120 | 5.3° | 0.35 |
+| DA3-Large, window 8, overlap 4, 120 frames | 65/120 | 15.6° | 0.72 |
+
+* Denser frames help a lot; more window overlap does not.
+* **MapAnything (Apache) is out.** It runs out of memory on any set of ≥ 4 views on a 16 GB T4, even in
+  memory-efficient mode. On 2-photo sets its metric scale is 12–26% low, against −1% … −9% for DA3 with the true focal.
+  (Mapping its cropped output to LiDAR pixels goes through its reported intrinsics, which may add some of that error;
+  either way it does not fit the hardware.)
+
+## E4: Classical SfM (COLMAP) for video poses, on the M1 (2026-10-02)
+
+`bench/local/e4_colmap_video.py`: pycolmap 4.2, SIFT, sequential matching (overlap 10), lens fixed to the true focal.
+
+| Frames sampled | Largest piece | All pieces together | Accuracy inside pieces | Time (M1 CPU) |
+|---|---|---|---|---|
+| 120 | 19 | 69/120 | 0.6–1.2° rotation, 1–6 cm position | 22 s |
+| 480 | 78 | 359/480 (75%), 7 pieces | ~1° rotation, 1–5 cm position (6 of 7 pieces) | 124 s |
+
+**Finding:** COLMAP is far more accurate than any learned model where it tracks, but the walk breaks into pieces.
+
+## E5: Hybrid video poses: COLMAP pieces joined by DA3 (2026-10-02)
+
+`bench/local/e5_hybrid_video.py`, DA3-Base on the M1 (MPS), lite profile (4 views per pass).
+
+| Bridge | Frames registered (< 10°) | Median rotation error | Position error (m) | Bridging time |
+|---|---|---|---|---|
+| DA3 sees 2 + 2 frames across each gap | 2/480 | 84° | 1.16 | 17 s |
+| DA3 chains every frame through each gap (windows of 4) | 317/480 | 10.7° | 0.67 | 148 s |
+| … with scale fitted over all shared frames | **328/480 (68%)** | 10.2° | 0.65 | 146 s |
+
+* Every gap is a fast turn: 65–131° of rotation in about 1 s, so frames across a gap share nothing and a direct bridge
+  cannot work. Chaining through the turn, where neighbouring frames are about 9° apart, does work.
+* Best video result so far, and it runs on the 8 GB laptop.
+* Remaining error comes from those fast turns. Next: loop closure (the protocol now requires ending where you started;
+  this proxy walk does not, with a 3.2 m gap) and validating each link before trusting it.
+* Engineering notes: pycolmap and torch each bundle OpenMP and abort if loaded in one process, so COLMAP runs in a
+  subprocess. DA3's top-level import pulls open3d and pycolmap through its exporters; `roomscan/recon/da3_loader.py`
+  stubs that one module.
