@@ -61,7 +61,7 @@ by design.
 
 | Tier | Capture | Rooms | Connected | How |
 |---|---|---|---|---|
-| Photos | `house_b` (19 photos, 6 rooms) | 6 | 3 (living, kitchen, bathroom) | DISK+LightGlue links, two-way pose agreement, shared-wall snap (E17–E18) |
+| Photos | `house_b` (17 photos, 6 rooms) | 6 | 3 (living, kitchen, bathroom) | DISK+LightGlue links, two-way pose agreement, shared-wall snap (E17–E18) |
 | LiDAR | `c7d28f72c6` | 5 | all 5 | one cloud; shared doors + carved passages (E19) |
 | Video | `house_b_walk.MOV` | see E21 | | |
 
@@ -73,7 +73,7 @@ photo per doorway (E14).
 | Run | Runtime | Peak RSS |
 |---|---|---|
 | Photos, one room (4 photos) | 10–13 s | < 3.8 GB (watchdog limit) |
-| Photos, full house (19 photos, 6 rooms, with stitching) | 47.7 s | < 3.8 GB |
+| Photos, full house (17 photos, 6 rooms, with stitching) | 47.7 s | < 3.8 GB |
 | Video, study (64 s, 272 frames) | 306 s (COLMAP 200+ s single-threaded) | < 3.8 GB |
 | LiDAR, 215 s walk with drift correction | 212 s | ~1.3 GB |
 | Any run replayed from checkpoints | 7–8 s | ~0.65 GB |

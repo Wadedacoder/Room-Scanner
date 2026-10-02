@@ -42,3 +42,4 @@ cache/*
 !cache/vlm/
 # Other Claude sessions' worktrees
 .claude/worktrees/
+dist/

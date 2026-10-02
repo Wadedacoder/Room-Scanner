@@ -14,6 +14,10 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   expected); a 212 s walk at 8 fps with best-of-4 single-threaded mapping is ~7 min per seed on the M1.
 
 ### Added
+- Data release (backlog 4.6): `scripts/package_data.py` builds release zips (house photos, both videos, the three
+  LiDAR scans; 1.68 GB) and `bench/datasets/release_manifest.json` with SHA-256 per asset; it refuses any photo or
+  video carrying GPS metadata (none found). `scripts/fetch_data.sh [prefixes]` downloads from the `data-v1` release,
+  verifies checksums and unpacks into `data/raw/`; tested end to end against local file URLs. Upload not done yet.
 - `scripts/setup_models.sh` now prefetches every weight the configured profile uses (DA3 geometry + metric from
   Hugging Face, DISK + LightGlue via kornia; `PROFILE=<name>` for another profile), so the first run is offline-ready
   (backlog 1.2).

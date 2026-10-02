@@ -1,0 +1,41 @@
+{
+ "release": "data-v1",
+ "assets": {
+  "photos_house_b.zip": {
+   "sha256": "215287f5d3b48490c52ee224b4ec035d5667ce0a692eb05c0140299373e3444a",
+   "bytes": 19725887,
+   "files": 17,
+   "unpacks_to": "data/raw/photos/house_b"
+  },
+  "video_study_walk1.zip": {
+   "sha256": "7a3b4f632e7ca71347d941bff176cc8a9cbc7d949e8ed389fa733907a7028381",
+   "bytes": 56292926,
+   "files": 1,
+   "unpacks_to": "data/raw/video/study_walk1.MOV"
+  },
+  "video_house_b_walk.zip": {
+   "sha256": "ac1166a7ba7756e7372d0a151352e25e07dd5cb80a573aece55de0244e1eb090",
+   "bytes": 448258842,
+   "files": 1,
+   "unpacks_to": "data/raw/video/house_b_walk.MOV"
+  },
+  "lidar_single_room.zip": {
+   "sha256": "0805f742d378e4bda480fef6e5839304364807bb7b77bb459983003727e9699c",
+   "bytes": 88525307,
+   "files": 3434,
+   "unpacks_to": "data/raw/lidar/c00a170fe1"
+  },
+  "lidar_single_scan_floor_only.zip": {
+   "sha256": "f822287268297d2adab49deff8e0ee5f50f05304b450d8d47d0b5eb476aa74d4",
+   "bytes": 276808921,
+   "files": 10506,
+   "unpacks_to": "data/raw/lidar/1a8384c3f6"
+  },
+  "lidar_single_scan_with_ceiling.zip": {
+   "sha256": "4bfbeb11ee21b114c46ad43cf0c9602d8ada827397f4e8b3c70dd827d0191379",
+   "bytes": 508471907,
+   "files": 19494,
+   "unpacks_to": "data/raw/lidar/c7d28f72c6"
+  }
+ }
+}
