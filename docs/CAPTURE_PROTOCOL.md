@@ -4,9 +4,11 @@ Follow it literally. Pick one tier; each section stands alone. Total time: about
 
 ## Before any tier (all tiers)
 1. Turn on every light and open the curtains. Open interior doors **fully**.
-2. Settings → Camera → **Lens Correction: ON** (the default). Leave everything else at its default.
+2. Settings → Camera → **Lens Correction: ON** (the default). Settings → Camera → Record Video → **HDR Video: OFF**.
+   Leave everything else at its default.
 3. Don't zoom with two fingers. Use only the **0.5×** or **1×** button where a step says to.
 4. Keep people and pets out of the room while you capture.
+5. **One floor per capture.** Don't go up or down stairs while capturing; capture each floor separately.
 
 ## Tier 1: Photos (any iPhone 15 or newer, no install)
 For **each room**, in the Camera app, Photo mode, **0.5×**, phone held **sideways (landscape)**:
@@ -26,7 +28,8 @@ HEIC and JPEG are both fine.
 Run: `roomscan run capture/ -o out/`, where `capture/` contains the room folders.
 
 ## Tier 2: Video (any iPhone 15 or newer, no install)
-Camera app → Video, **0.5×**, phone held **upright (portrait)**, default resolution.
+Camera app → Video, phone held **upright (portrait)**, default resolution. Tap **0.5** before you press record and
+check it still shows **0.5×** (the video file does not record which lens was used, so we cannot check it afterwards).
 1. Start recording in the doorway of the first room.
 2. Walk slowly along the walls (one step per second), phone tilted slightly down so the floor-wall line stays in view.
 3. In each room, stop in the middle once and turn slowly through a full circle, tilting up to the ceiling for a moment.
@@ -35,7 +38,9 @@ Camera app → Video, **0.5×**, phone held **upright (portrait)**, default reso
 **Hand-off:** AirDrop, or cable/Files as above, to get the `.MOV`. Run: `roomscan run walk.MOV -o out/`
 
 ## Tier 3: LiDAR (iPhone 12 Pro or newer Pro, install "Stray Scanner", free)
-1. Open Stray Scanner, press record, then walk the same path as Tier 2 but at **half the speed**. Stay 1–3 m from the walls.
+1. Open Stray Scanner, press record, then walk the same path as Tier 2 but at **half the speed: about one step
+   every two seconds**, and turn slowly (a quarter turn should take at least 2 seconds). Stay 1–3 m from the walls.
+   In each room, tilt up to the ceiling for a few seconds.
 2. **Finish where you started**, then stop recording.
 
 **Hand-off:** in Stray Scanner, open the recording → Share → AirDrop or Save to Files. You get one folder.

@@ -188,3 +188,25 @@ Measured afterwards: the photo pipeline held **4.46 GB of GPU (MPS) memory**, in
 system memory fell to **1%**. Fixes (0.3.1): GPU memory cap in the lite profile (MPS allocations fail cleanly instead of
 starving macOS), one model loaded at a time, the metric model run one image per call, 3 views per window, and
 `scripts/run_guarded.sh` for long benchmark loops. Re-run peak: 2.43 GB GPU, < 1.9 GB process, no freeze.
+
+## E9: Capture audit against the protocol (2026-10-02)
+
+Every capture we hold, checked against `docs/CAPTURE_PROTOCOL.md` (pace and turns from ARKit poses; lens, ceiling and
+lighting from 12 evenly spaced frames per video; files in `runs/protocol_check/`).
+
+| Capture | Tier | Verdict | Main deviations |
+|---|---|---|---|
+| `c00a170fe1` (37 s) | LiDAR | furthest off | 3 spaces in 37 s (~12 s each); never tilts above level (86% of frames point >25° down); ends 3.18 m from start; 0.43 m/s |
+| `1a8384c3f6` (115 s) | LiDAR | partly | never looks at the ceiling; 0.47 m/s; closes its loop (0.17 m) |
+| `c7d28f72c6` (215 s) | LiDAR | closest | looks up (28% of frames); closes its loop (0.39 m); 0.48 m/s and ~43 s per room vs 60–90 s |
+| study photos (13) | photos | not a protocol set | mostly portrait, mixed 0.5× / 1× / cropped ultra-wide; one landscape 0.5× photo |
+| `study_walk1.MOV` (34 s) | video | close | likely 1× lens (file does not record it); some blur on turns; HDR |
+| `house_IMG_4637.MOV` (50 s) | video | off | ~4 rooms in 50 s; heavy blur; does not end at the start; one dark room; HDR |
+
+All three LiDAR walks are ~1.4× faster than the protocol pace and turn at up to 106–133°/s. The LiDAR captures predate
+the protocol (2026-09-01). Consequences: ceilings are measurable only on `c7d28f72c6`; drift correction has a loop only
+on the two closed walks; all of this data tests robustness, not protocol accuracy.
+
+Protocol changes made from this audit (0.4.1): HDR video off; one floor per capture (the flat has stairs); a check that
+0.5× is still selected for video (the file does not record the lens); a concrete LiDAR pace (one step every two
+seconds, a quarter turn in at least 2 s) and an explicit ceiling tilt per room.

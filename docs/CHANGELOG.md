@@ -8,6 +8,15 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-02 · capture protocol fixes from the capture audit · tag `v0.4.1`
+
+### Changed
+- `docs/CAPTURE_PROTOCOL.md`: HDR video off; one floor per capture; tap 0.5 and confirm it before recording video;
+  LiDAR pace made concrete (one step every two seconds, a quarter turn in at least 2 s) plus a ceiling tilt per room.
+  - Why (E9): every capture we hold deviates. LiDAR walks are ~1.4× too fast with turns up to 133°/s, two never look
+    at the ceiling; both iPhone videos are HDR (untested in the pipeline) and likely 1×, which the file can't show.
+  - Checked: n/a until the next protocol capture; the audit table in E9 is the baseline to compare against.
+
 ## [0.4.0] - 2026-10-02 · local test website · tag `v0.4.0`
 
 ### Added
