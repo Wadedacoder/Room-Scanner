@@ -8,6 +8,15 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-02 · links accepted by two-way agreement; door alignment · tag `v0.6.1`
+
+### Changed
+- Cross-room links are accepted when the pose from each room's depth agrees (mirror yaws within 10°, both level), not by
+  a 45-match threshold, which the non-reproducible GPU matcher made flaky (E18). Links are checkpointed.
+- Shared-wall snap allows near-miss walls (±1.5 m) and lines up the doors when both facing walls have one within 2.5 m.
+- Checked (E18): house_b connects 3 of 6 rooms (living, kitchen, bathroom) with no overlaps; the rejected candidates all
+  had a pose tilted 28–59° in one direction.
+
 ## [0.6.0] - 2026-10-02 · first connected photo plans · tag `v0.6.0`
 
 ### Added

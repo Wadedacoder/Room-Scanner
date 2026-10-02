@@ -18,7 +18,9 @@ import numpy as np
 
 from roomscan.geometry import plan2d as p2
 
-MIN_INLIERS = 45  # E14: real links 47-89, coincidences 14-38
+MIN_INLIERS = 30  # candidates; acceptance is the two-way agreement test below (E18)
+MAX_YAW_DISAGREE_DEG = 10.0
+MAX_TILT_DEG = 15.0
 
 
 @dataclass
@@ -95,14 +97,20 @@ def place_rooms(frames: dict[str, RoomFrame], links, min_inliers: int = MIN_INLI
     for L in links:
         if L.inliers < min_inliers or L.room_a not in frames or L.room_b not in frames:
             continue
-        r = _relative_pose(frames[L.room_a], L.photo_a, frames[L.room_b], L.photo_b, L.pts_a, L.pts_b)
-        if r is None:
+        # E18: a raw match count is noisy (47 vs 42 for the same pair across runs on the Mac GPU) and some 25-40-match
+        # pairs are coincidences. Accept a link only if the pose computed from A's depth and the one from B's depth
+        # agree (mirror-image yaw within 10 deg) and both are level (the two rooms share gravity).
+        r1 = _relative_pose(frames[L.room_a], L.photo_a, frames[L.room_b], L.photo_b, L.pts_a, L.pts_b)
+        r2 = _relative_pose(frames[L.room_b], L.photo_b, frames[L.room_a], L.photo_a, L.pts_b, L.pts_a)
+        if r1 is None or r2 is None:
             continue
-        yaw, t, n_pnp, tilt = r
-        if tilt > 15:  # both frames are gravity-aligned; a big tilt means a wrong PnP
+        (y1, t1, n1, tilt1), (y2, t2, n2, tilt2) = r1, r2
+        disagree = abs(np.degrees(np.angle(np.exp(1j * (y1 + y2)))))
+        if disagree > MAX_YAW_DISAGREE_DEG or max(tilt1, tilt2) > MAX_TILT_DEG:
             continue
-        cand.append({"a": L.room_a, "b": L.room_b, "yaw": yaw, "t": t, "matches": L.inliers, "pnp_inliers": n_pnp,
-                     "tilt_deg": round(tilt, 1)})
+        yaw = float(np.angle((np.exp(1j * y1) + np.exp(-1j * y2)) / 2))
+        cand.append({"a": L.room_a, "b": L.room_b, "yaw": yaw, "t": t1, "matches": L.inliers, "pnp_inliers": n1 + n2,
+                     "yaw_disagree_deg": round(float(disagree), 1), "tilt_deg": round(max(tilt1, tilt2), 1)})
     if not cand:
         return {}, []
     degree: dict[str, int] = {}
@@ -123,6 +131,7 @@ def place_rooms(frames: dict[str, RoomFrame], links, min_inliers: int = MIN_INLI
                     P = placed[p]
                     placed[q] = Placement(P.yaw + yaw_s, P.t + _xz_rot(P.yaw) @ t, p, c)
                     edges.append({"a": p, "b": q, "matches": c["matches"], "pnp_inliers": c["pnp_inliers"],
+                                  "yaw_disagree_deg": c["yaw_disagree_deg"], "tilt_deg": c["tilt_deg"],
                                   "yaw_snap_deg": round(float(np.degrees(yaw_s - yaw)), 1)})
                     changed = True
     return placed, edges

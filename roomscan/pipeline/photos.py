@@ -156,10 +156,13 @@ WALL_THICKNESS = 0.15  # typical interior wall; rooms linked through a doorway s
 
 
 def _edges_axis(room: dict):
-    """Axis-aligned polygon edges as (axis, coord, lo, hi, outward_sign, has_opening)."""
+    """Axis-aligned polygon edges as (axis, coord, lo, hi, outward_sign, door_centres_along)."""
     poly = np.array(room["polygon"])
     cen = poly.mean(0)
-    open_walls = {o["wall_id"] for o in room.get("openings", []) if o["type"] != "window"}
+    doors: dict[str, list] = {}
+    for o in room.get("openings", []):
+        if o["type"] != "window" and "centre_plan" in o:
+            doors.setdefault(o["wall_id"], []).append(o["centre_plan"])
     out = []
     for w in room["walls"]:
         a, b = np.array(w["start"]), np.array(w["end"])
@@ -169,7 +172,8 @@ def _edges_axis(room: dict):
         axis = 0 if abs(d[0]) < abs(d[1]) else 1  # axis 0: wall at u = c, runs along v
         c = (a[axis] + b[axis]) / 2
         lo, hi = sorted((a[1 - axis], b[1 - axis]))
-        out.append((axis, c, lo, hi, 1.0 if c > cen[axis] else -1.0, w["id"] in open_walls))
+        out.append((axis, c, lo, hi, 1.0 if c > cen[axis] else -1.0,
+                    [float(pc[1 - axis]) for pc in doors.get(w["id"], [])]))
     return out
 
 
@@ -198,19 +202,28 @@ def _snap_shared_walls(rooms: dict, edges: list[dict]) -> list[dict]:
                     continue
                 gap = (cb - ca) * sa  # positive: B's wall lies outside A's wall, as it should
                 overlap = min(ha, hb) - max(la, lb)
-                if overlap < 0.3 or gap < -1.0:
+                # E18: the along-wall position from a visual link can be 1-2 m off, so allow near-misses
+                if overlap < -1.5 or gap < -1.0:
                     continue
-                score = abs(gap - WALL_THICKNESS) - (0.5 if (da or db) else 0.0)
+                door_pair = None
+                if da and db:  # rooms linked through a doorway connect THROUGH a door: line the doors up
+                    dd = [(x - y) for x in da for y in db]
+                    k = int(np.argmin(np.abs(dd)))
+                    if abs(dd[k]) < 2.5:
+                        door_pair = dd[k]
+                score = abs(gap - WALL_THICKNESS) + max(0.0, -overlap) - (1.0 if door_pair is not None else 0.0)
                 if best is None or score < best[0]:
-                    best = (score, ax, sa, gap, da or db)
+                    best = (score, ax, sa, gap, door_pair)
         if best is None:
             log.append({"a": e["a"], "b": e["b"], "snapped": False})
             continue
-        _, ax, sa, gap, door = best
+        _, ax, sa, gap, door_pair = best
         delta = np.zeros(2)
         delta[ax] = (WALL_THICKNESS - gap) * sa
+        if door_pair is not None:
+            delta[1 - ax] = door_pair
         for r in subtree(e["b"]):
             _shift_room(rooms[r], delta)
         log.append({"a": e["a"], "b": e["b"], "snapped": True, "moved_m": round(float(np.hypot(*delta)), 3),
-                    "via_door_wall": bool(door)})
+                    "doors_aligned": door_pair is not None})
     return log

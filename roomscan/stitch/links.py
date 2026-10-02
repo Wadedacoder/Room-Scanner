@@ -33,6 +33,29 @@ def _verify(pa, pb):
 
 def cross_room_links(rooms: dict[str, list[np.ndarray]], cfg, long_side: int = 1024,
                      n_feat: int = 2048) -> list[Link]:
+    """Checkpointed wrapper: DISK + LightGlue on the Mac GPU is not bit-reproducible (47 vs 42 matches for one pair,
+    E18), so the same photos must replay the same links (roomscan.recon.checkpoint)."""
+    import json
+
+    from roomscan.recon import checkpoint as ck
+
+    names = sorted(rooms)
+    key = ck.key_for("links", [im for n in names for im in rooms[n]], {"rooms": names, "res": long_side, "n": n_feat})
+    path = ck.path_for(cfg["runtime"]["cache_dir"], "links", key, ".json")
+    if ck.enabled() and path.exists():
+        return [Link(d["a"], d["pa"], d["b"], d["pb"], np.array(d["xa"], np.float32).reshape(-1, 2),
+                     np.array(d["xb"], np.float32).reshape(-1, 2), d["n"]) for d in json.loads(path.read_text())]
+    links = _cross_room_links_live(rooms, cfg, long_side, n_feat)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps([{"a": L.room_a, "pa": L.photo_a, "b": L.room_b, "pb": L.photo_b,
+                                "xa": L.pts_a.round(2).tolist(), "xb": L.pts_b.round(2).tolist(), "n": L.inliers}
+                               for L in links]))
+    tmp.replace(path)
+    return links
+
+
+def _cross_room_links_live(rooms: dict[str, list[np.ndarray]], cfg, long_side: int = 1024,
+                           n_feat: int = 2048) -> list[Link]:
     """rooms: name -> list of RGB photos (original resolution). Returns verified matches for every cross-room photo
     pair, strongest first."""
     import torch

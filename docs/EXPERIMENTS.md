@@ -385,3 +385,27 @@ yaw snapped to 90° steps between the two rooms' wall directions (`roomscan/stit
 * 2 of 6 rooms connected. bathroom, bedroom, store and study have no photo that sees into another room (E14) and are
   drawn to the side with a warning naming them and the fix (a look-through photo per doorway).
 * Not yet verified against tape (no living/kitchen measurements).
+
+## E18: More rooms connected: link acceptance by two-way agreement (2026-10-02)
+
+`bench/local/e18_link_debug.py`. The bathroom↔living link had 47 matches in E14 but 42 here: DISK + LightGlue on the
+Mac GPU is not bit-reproducible, so a fixed 45-match threshold flipped it in and out. Computing the pose from each
+room's depth separately:
+
+| Link | matches | pose from A's depth | pose from B's depth | verdict |
+|---|---|---|---|---|
+| bathroom → living | 42 | yaw +47.4°, tilt 4.9° | yaw −50.8°, tilt 5.2° | **agree** (mirror yaws within 3.4°, both level) |
+| hall → study | 38 | yaw +33.7°, tilt 12.5° | yaw −39.1°, tilt 43.6° | reject (tilt) |
+| hall → study (2nd) | 31 | yaw −173.8° | yaw +141.7°, tilt 27.6° | reject |
+| bathroom → hall | 27 | yaw +152.5°, tilt 29.7° | tilt 58.5° | reject |
+
+New rule: candidates need ≥ 30 matches, and are accepted only if the two directions agree (yaw within 10°) and both
+are level (tilt ≤ 15°). Links are checkpointed so identical photos replay identical links.
+
+Shared-wall snap extended: facing walls may miss each other by up to 1.5 m along the wall (the visual along-wall
+position can be 1–2 m off), and when both facing walls carry a door within 2.5 m the doors are lined up.
+
+Result on house_b: **3 of 6 rooms connected** (living, kitchen, bathroom), no overlaps between them. The bathroom's door
+does not line up with a living-room door (nearest > 2.5 m away), consistent with it opening onto the hall. Hall
+connector photos (4644, 4652) did not add links (best 43 matches, rejected by the agreement test). Bedroom, store and
+study have no photo that sees into another room.
