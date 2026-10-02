@@ -78,6 +78,26 @@ photo per doorway (E14).
 | LiDAR, 215 s walk with drift correction | 212 s | ~1.3 GB |
 | Any run replayed from checkpoints | 7–8 s | ~0.65 GB |
 
+## 5b. Clean-machine test (README → result)
+
+Fresh `git clone`, **empty** uv, Hugging Face and torch caches (everything downloaded: 1.6 GB packages, 1.7 GB
+weights), README steps timed on the M1 Air (data from the release zips via `ROOMSCAN_DATA_URL`, not yet uploaded):
+
+| Step | Time |
+|---|---|
+| `scripts/setup.sh` (+ web extra) | 25 s |
+| `scripts/setup_models.sh` (torch, DA3, pycolmap, kornia + weight prefetch) | 320 s |
+| `scripts/fetch_data.sh photos lidar_single_room video_study` (checksums verified) | 3 s |
+| `roomscan run` LiDAR `c00a170fe1` | 59 s |
+| `roomscan run` photos `house_b` (6 rooms, live models) | 203 s |
+| `pytest -q` | 38 passed, 65 s |
+| **Total, clone to two plans** | **≈ 10 min** |
+
+The first attempt failed and found two bugs: every run crashed without the `anthropic` package, and `setup_models.sh`
+did not install `kornia`. Both were fixed (`b9e01b6`) before this run. The fresh install reproduced the same room
+areas as the development environment (study 10.71 m², kitchen 6.22 m², …). The photo run took 203 s here vs 48 s
+warm, because it shared the CPU with a COLMAP job and was the first model load.
+
 ## 6. Damage, flags and scope
 
 The chain runs end to end on all tiers (detector → projection onto floor / ceiling / wall → rules → scope), validated

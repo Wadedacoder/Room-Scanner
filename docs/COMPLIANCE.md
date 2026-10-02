@@ -30,4 +30,4 @@ Status: ⬜ not started · 🟨 in progress · ✅ done · ❌ fails gate (repor
 | 24 | Raw benchmark data (Deliv. 8) | scripts/package_data.py, scripts/fetch_data.sh | release `data-v1` (1.68 GB, SHA-256 manifest) | 🟨 upload ⏸ user OK |
 | 25 | Mirrors / glass / wet-look / low light covered (Constraints) | docs/TECH_REPORT.md §6 | failure-mode table (expected effect, mitigation, tested?) | 🟨 mostly untested, said so |
 | 26 | Weights fetched by script (Constraints) | scripts/setup_models.sh, roomscan/recon/da3_loader.py | prefetch + offline-first loading | ✅ |
-| 27 | Hardware profiles, clean-machine install | configs/, scripts/setup.sh | `roomscan hw`; clean-machine test running | 🟨 |
+| 27 | Hardware profiles, clean-machine install | configs/, scripts/setup.sh | `roomscan hw`; clean-machine test ≈ 10 min from empty caches (BENCHMARK §5b) | ✅ |

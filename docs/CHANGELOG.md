@@ -20,6 +20,8 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   expected); a 212 s walk at 8 fps with best-of-4 single-threaded mapping is ~7 min per seed on the M1.
 
 ### Added
+- Clean-machine README test (backlog 4.7): fresh clone + empty caches → LiDAR and 6-room photo plans + 38 tests
+  passing in ≈ 10 min on the M1 Air; same room areas as the dev environment.
 - `docs/TECH_REPORT.md` (backlog 4.5): architecture, uncertainty model, results, what failed, fix loop, failure-mode
   table for mirrors / glass / wet-look / low light (each marked tested or not), limits. Compliance matrix refreshed.
 - Data release (backlog 4.6): `scripts/package_data.py` builds release zips (house photos, both videos, the three
