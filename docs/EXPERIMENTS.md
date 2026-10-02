@@ -365,3 +365,23 @@ Iterations on house_b:
 
 No door widths are taped yet, so widths are unverified. LiDAR `c00a170fe1`: the corridor–bathroom door is found from
 both rooms at the same place (0.60 / 0.65 m).
+
+## E17: First connected photo plan (house_b) (2026-10-02)
+
+Pipeline 0.6.0: per-room reconstructions are linked by DISK + LightGlue matches between photos of different rooms
+(`roomscan/stitch/links.py`); a link with ≥ 45 verified matches is turned into a relative pose by PnP (room A's metric
+3D points at the matched pixels → where room B's photo was taken, in A's frame), restricted to yaw + translation, the
+yaw snapped to 90° steps between the two rooms' wall directions (`roomscan/stitch/photo_graph.py`).
+
+| Step | kitchen ↔ living |
+|---|---|
+| visual link | 99 verified matches (kitchen photo looking through the doorway) |
+| PnP placement | rotation right (kitchen door wall faces living's wall) but rooms ~2.8 m apart |
+| + shared-wall snap | living slid along the wall normal so the facing walls are 15 cm apart; kitchen's 0.95 m door opens into living |
+
+* Why the gap: PnP uses the depth seen through the doorway, the least reliable depth in the image (furthest, lowest
+  confidence), so direction is good and distance is not. Rooms linked through a doorway share a wall, which fixes the
+  distance; the along-wall position comes from the visual estimate.
+* 2 of 6 rooms connected. bathroom, bedroom, store and study have no photo that sees into another room (E14) and are
+  drawn to the side with a warning naming them and the fix (a look-through photo per doorway).
+* Not yet verified against tape (no living/kitchen measurements).

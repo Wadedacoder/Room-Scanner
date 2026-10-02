@@ -11,9 +11,9 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | 0.1 | Photo wall sizes: diagnose untaped rooms; fix once tape for living/kitchen/bedroom/bathroom/store exists | P2 gates | 🟨 study ±2%; ⏸ tape for other rooms |
 | 0.2 | Door/opening detection on photo rooms (works on LiDAR) | P2 openings, stitch | ✅ every room has an opening (E15); widths ⏸ door tape |
 | 0.3 | Full-house photo run hangs (each room alone 10–13 s) | walk-in | ✅ not reproduced after offline-first loading (47.7 s) |
-| 0.4 | Place rooms from strong cross-room visual links (DISK+LightGlue + PnP) | P2 photo stitch | ⬜ |
+| 0.4 | Place rooms from strong cross-room visual links (DISK+LightGlue + PnP) | P2 photo stitch | ✅ v0.6.0 (kitchen↔living) |
 | 0.5 | Door-geometry matching for rooms without a visual link; adjacency; overlap check | P2 photo stitch | ⬜ |
-| 0.6 | Connected plan in plan.json (`adjacency`, global polygons) + SVG for photo, video, LiDAR | P2 | ⬜ |
+| 0.6 | Connected plan in plan.json (`adjacency`, global polygons) + SVG for photo, video, LiDAR | P2 | 🟨 photo done; LiDAR/video ⬜ |
 | 0.7 | Protocol: one photo per doorway looking through it into the next room (E14 evidence) | P1 | ⬜ |
 
 ## Robustness and reproducibility

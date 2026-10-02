@@ -43,7 +43,10 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
     model = LearnedRecon(cfg)
     plan = empty_plan("photos", str(path))
     warnings, debug = [], {}
-    x_cursor, total_area, total_var = 0.0, 0.0, 0.0
+    total_area, total_var = 0.0, 0.0
+    frames, room_photos, per_room = {}, {}, {}
+    from roomscan.stitch.photo_graph import RoomFrame
+
     for name, photos in capture.items():
         rec, pts, cams, Gr = reconstruct_room(model, photos)
         P = voxelize(np.concatenate(pts), VOXEL)
@@ -65,24 +68,149 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
         warnings += res.warnings
         debug[name] = {"scale": rec.scale, "focal_pred_err": rec.focal_pred_err, "n_photos": len(photos),
                        "focal_source": photos[0].focal_source, "backend": res.debug}
-        for room in res.rooms:
-            # rooms are not stitched yet: shift each into its own slot along +x so the drawing doesn't overlap
+        if not res.rooms:
+            continue
+        c2w_g = rec.c2w.copy()
+        c2w_g[:, :3, :3] = Gr @ rec.c2w[:, :3, :3]
+        c2w_g[:, :3, 3] = rec.c2w[:, :3, 3] @ Gr.T
+        frames[name] = RoomFrame(name, c2w_g, rec.depth, rec.K, photos[0].image.shape[:2], res.debug["theta"],
+                                 np.array(res.rooms[0]["polygon"]))
+        room_photos[name] = [p.image for p in photos]
+        per_room[name] = res.rooms[0]
+
+    placed, edges, root_theta = {}, [], 0.0
+    if cfg["recon"].get("photo_stitch", True) and len(frames) > 1:
+        from roomscan.stitch.links import cross_room_links
+        from roomscan.stitch.photo_graph import place_rooms
+
+        links = cross_room_links(room_photos, cfg)
+        placed, edges = place_rooms(frames, links)
+        debug["links"] = [{"a": L.room_a, "b": L.room_b, "photos": [L.photo_a, L.photo_b], "matches": L.inliers}
+                          for L in links[:15]]
+        if placed:
+            root_theta = frames[next(r for r, p in placed.items() if p.parent is None)].theta
+    x_cursor = 0.0
+    if placed:
+        allp = np.concatenate([_to_property(per_room[r]["polygon"], frames[r], placed[r], root_theta) for r in placed])
+        x_cursor = float(allp[:, 0].max()) + 1.5
+    for name, room in per_room.items():
+        if name in placed:
+            _transform_room(room, frames[name], placed[name], root_theta)
+        else:
+            # not linked to the others: drawn to the side, and said so
             poly = np.array(room["polygon"])
-            shift = x_cursor - poly[:, 0].min()
-            room["polygon"] = (poly + [shift, 0]).round(4).tolist()
-            for w in room["walls"]:
-                w["start"] = [round(w["start"][0] + shift, 4), w["start"][1]]
-                w["end"] = [round(w["end"][0] + shift, 4), w["end"][1]]
-            x_cursor = poly[:, 0].max() + shift + 1.0
-            plan["rooms"].append(room)
-            total_area += room["floor_area"]["value"]
-            total_var += ((room["floor_area"]["hi"] - room["floor_area"]["lo"]) / (2 * 1.645)) ** 2
+            shift = np.array([x_cursor - poly[:, 0].min(), 0.0])
+            _shift_room(room, shift)
+            x_cursor = float(poly[:, 0].max() + shift[0] + 1.0)
+        plan["rooms"].append(room)
+        total_area += room["floor_area"]["value"]
+        total_var += ((room["floor_area"]["hi"] - room["floor_area"]["lo"]) / (2 * 1.645)) ** 2
+    if edges:
+        debug["wall_snaps"] = _snap_shared_walls({r: per_room[r] for r in placed}, edges)
+    plan["adjacency"] = [{"a": e["a"], "b": e["b"], "via": f"visual-link ({e['matches']} matches)"} for e in edges]
+    unplaced = [r for r in per_room if r not in placed]
+    if placed and unplaced:
+        warnings.append(f"connected {len(placed)} of {len(per_room)} rooms; not linked (drawn to the side): "
+                        f"{', '.join(unplaced)}. Add a photo per doorway looking through it into the next room.")
+    elif not placed and len(per_room) > 1:
+        warnings.append("rooms could not be linked: no photo sees into another room; drawn side by side")
+    debug["placements"] = {r: {"parent": p.parent, "yaw_deg": round(float(np.degrees(p.yaw)), 1),
+                               "t": np.round(p.t, 3).tolist()} for r, p in placed.items()}
+    debug["edges"] = edges
     plan["property"] = {"footprint_area": meas(total_area, float(np.sqrt(total_var)), "m2")}
     plan["capture"]["runtime_s"] = round(time.time() - t0, 1)
     plan["capture"]["models"] = {"geometry": cfg["recon"]["model"], "metric": cfg["recon"]["metric_model"]}
     plan["warnings"] = warnings + [
-        "rooms are NOT stitched yet (doorway matching not implemented): they are drawn side by side and adjacency "
-        "is empty",
         "photo-tier intervals use a 5% scale term from proxy-data experiments E1-E2; not yet calibrated on real photos",
         "openings, damage and scope are not implemented yet"]
     return plan, debug
+
+
+def _to_property(poly_uv, frame, pl, root_theta):
+    from roomscan.stitch.photo_graph import polygon_to_property
+
+    return polygon_to_property(np.asarray(poly_uv, float), frame, pl, root_theta)
+
+
+def _transform_room(room: dict, frame, pl, root_theta: float) -> None:
+    room["polygon"] = _to_property(room["polygon"], frame, pl, root_theta).round(4).tolist()
+    for w in room["walls"]:
+        se = _to_property([w["start"], w["end"]], frame, pl, root_theta).round(4)
+        w["start"], w["end"] = se[0].tolist(), se[1].tolist()
+    for o in room.get("openings", []):
+        if "centre_plan" in o:
+            o["centre_plan"] = _to_property([o["centre_plan"]], frame, pl, root_theta).round(4)[0].tolist()
+
+
+def _shift_room(room: dict, shift) -> None:
+    room["polygon"] = (np.array(room["polygon"]) + shift).round(4).tolist()
+    for w in room["walls"]:
+        w["start"] = (np.array(w["start"]) + shift).round(4).tolist()
+        w["end"] = (np.array(w["end"]) + shift).round(4).tolist()
+    for o in room.get("openings", []):
+        if "centre_plan" in o:
+            o["centre_plan"] = (np.array(o["centre_plan"]) + shift).round(4).tolist()
+
+
+WALL_THICKNESS = 0.15  # typical interior wall; rooms linked through a doorway share a wall
+
+
+def _edges_axis(room: dict):
+    """Axis-aligned polygon edges as (axis, coord, lo, hi, outward_sign, has_opening)."""
+    poly = np.array(room["polygon"])
+    cen = poly.mean(0)
+    open_walls = {o["wall_id"] for o in room.get("openings", []) if o["type"] != "window"}
+    out = []
+    for w in room["walls"]:
+        a, b = np.array(w["start"]), np.array(w["end"])
+        d = b - a
+        if np.hypot(*d) < 0.3:
+            continue
+        axis = 0 if abs(d[0]) < abs(d[1]) else 1  # axis 0: wall at u = c, runs along v
+        c = (a[axis] + b[axis]) / 2
+        lo, hi = sorted((a[1 - axis], b[1 - axis]))
+        out.append((axis, c, lo, hi, 1.0 if c > cen[axis] else -1.0, w["id"] in open_walls))
+    return out
+
+
+def _snap_shared_walls(rooms: dict, edges: list[dict]) -> list[dict]:
+    """For each placed link a->b: find the facing wall pair (parallel, opposite outward normals, overlapping along the
+    wall, preferring a wall with a door) and slide b (with everything attached through it) so the two walls are
+    WALL_THICKNESS apart. E17: the visual link fixes direction well but distance poorly (depth seen through a doorway
+    is the least reliable part of the image), leaving kitchen and living ~2.8 m apart."""
+    children: dict[str, list[str]] = {}
+    for e in edges:
+        children.setdefault(e["a"], []).append(e["b"])
+
+    def subtree(r):
+        out = [r]
+        for c in children.get(r, []):
+            out += subtree(c)
+        return out
+
+    log = []
+    for e in edges:
+        A, B = rooms[e["a"]], rooms[e["b"]]
+        best = None
+        for (ax, ca, la, ha, sa, da) in _edges_axis(A):
+            for (bx, cb, lb, hb, sb, db) in _edges_axis(B):
+                if ax != bx or sa != -sb:  # parallel walls whose outsides face each other
+                    continue
+                gap = (cb - ca) * sa  # positive: B's wall lies outside A's wall, as it should
+                overlap = min(ha, hb) - max(la, lb)
+                if overlap < 0.3 or gap < -1.0:
+                    continue
+                score = abs(gap - WALL_THICKNESS) - (0.5 if (da or db) else 0.0)
+                if best is None or score < best[0]:
+                    best = (score, ax, sa, gap, da or db)
+        if best is None:
+            log.append({"a": e["a"], "b": e["b"], "snapped": False})
+            continue
+        _, ax, sa, gap, door = best
+        delta = np.zeros(2)
+        delta[ax] = (WALL_THICKNESS - gap) * sa
+        for r in subtree(e["b"]):
+            _shift_room(rooms[r], delta)
+        log.append({"a": e["a"], "b": e["b"], "snapped": True, "moved_m": round(float(np.hypot(*delta)), 3),
+                    "via_door_wall": bool(door)})
+    return log

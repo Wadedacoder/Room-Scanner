@@ -8,6 +8,18 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-02 · first connected photo plans · tag `v0.6.0`
+
+### Added
+- **Photo-tier stitching** (`roomscan/stitch/`): DISK + LightGlue cross-room links → PnP relative pose (yaw +
+  translation, yaw snapped to the wall grid) → spanning tree from the best-connected room → shared-wall snap (linked
+  rooms' facing walls 15 cm apart). `plan.json` gets property-frame polygons and `adjacency`; unlinked rooms are drawn
+  to the side with a warning naming them. `recon.photo_stitch` (default on).
+  - Why: P0; the brief's photo-tier gate requires one stitched plan from per-room folders.
+  - Checked (E17): house_b kitchen ↔ living connected (99 matches), kitchen door opening into living; 4 rooms unlinked
+    because no photo sees into another room.
+- `kornia` in the `ml` extra.
+
 ### Added
 - **Door / window detection** (`roomscan/openings/detect.py`): openings are wall stretches the camera saw through
   (points beyond the wall line, ray crossing the gap); door if the see-through reaches the floor, window above a sill.
