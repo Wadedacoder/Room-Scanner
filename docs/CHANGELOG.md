@@ -8,7 +8,15 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Health watch
+- 2026-10-03 00:19 FAIL (job > 20 min): the house video (`house_b_walk.MOV`, 1698 frames at 8 fps) is in COLMAP
+  mapping, not stuck: matching finished 00:13, seed 0 of 4 finished 00:20 with 6 pieces. Left running (~45 min
+  expected); a 212 s walk at 8 fps with best-of-4 single-threaded mapping is ~7 min per seed on the M1.
+
 ### Added
+- `scripts/setup_models.sh` now prefetches every weight the configured profile uses (DA3 geometry + metric from
+  Hugging Face, DISK + LightGlue via kornia; `PROFILE=<name>` for another profile), so the first run is offline-ready
+  (backlog 1.2).
 - `bench/repeat.py`: reruns a capture N times live (`ROOMSCAN_NO_CACHE=1`, separate guarded processes) and reports
   the spread of every gated number. Photo tier, study, 3 runs: identical to 4 decimals on walls, area, ceiling and
   openings; 27.9 ± 1.1 s each. `docs/BENCHMARK.md`: first benchmark report (gates per tier, repeatability, LiDAR drift

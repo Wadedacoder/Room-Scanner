@@ -20,9 +20,9 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | # | Item | Serves | Status |
 |---|---|---|---|
 | 1.1 | Checkpoint model outputs (DA3 recon, COLMAP) by input hash: resume after crash, deterministic replay | D4, walk-in | ✅ |
-| 1.2 | Offline-first model loading; weights fetched by script | D4, constraints | 🟨 loading done; setup_models fetches weights ⬜ |
+| 1.2 | Offline-first model loading; weights fetched by script | D4, constraints | ✅ offline-first loading; `setup_models.sh` prefetches DA3 + metric + DISK/LightGlue |
 | 1.3 | Health check every 30 min (tests, website, memory, stuck jobs, git) | process | ✅ session watch at :13/:43 |
-| 1.4 | Video tracking repeatable (seeded, single-threaded) + best-of-seeds; commit | P2 repeatability | 🟨 uncommitted |
+| 1.4 | Video tracking repeatable (seeded, single-threaded) + best-of-seeds; commit | P2 repeatability | ✅ committed (sfm.py, best of 4 seeds) |
 | 1.5 | `cache/` and stale worktree hygiene (.gitignore, other session's branch) | process | ✅ ignored; branch left untouched |
 
 ## Tiers
