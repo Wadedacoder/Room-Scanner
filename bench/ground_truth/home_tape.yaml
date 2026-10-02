@@ -1,0 +1,44 @@
+# Tape ground truth for YOUR space (photo + video tiers). Fill in centimetres; two readings each.
+# How to measure: see "Measuring" in the chat / docs/CAPTURE_PROTOCOL.md. Leave a value as null if you could not
+# measure it; never estimate.
+space_id: home_tape
+measured_on: 2026-10-02
+instrument: tape
+instrument_model: ""          # e.g. "Stanley 5 m"
+phone: ""                     # e.g. "iPhone 15" (Settings > General > About > Model Name)
+
+rooms:
+  - id: room1                 # rename freely (bedroom, kitchen...), must match the photo folder name
+    ceiling_height_cm: [null, null]     # floor to ceiling, in a corner, along the wall
+    walls:                              # clockwise, starting with the wall that has the door; label them w1, w2...
+      - {id: w1, length_cm: [null, null]}
+      - {id: w2, length_cm: [null, null]}
+      - {id: w3, length_cm: [null, null]}
+      - {id: w4, length_cm: [null, null]}
+    openings:                           # inside the frame, jamb to jamb (doors) / reveal to reveal (windows)
+      - {id: d1, wall: w1, type: door, width_cm: [null, null], height_cm: [null], connects_to: hall}
+  - id: room2
+    ceiling_height_cm: [null, null]
+    walls:
+      - {id: w1, length_cm: [null, null]}
+      - {id: w2, length_cm: [null, null]}
+      - {id: w3, length_cm: [null, null]}
+      - {id: w4, length_cm: [null, null]}
+    openings:
+      - {id: d1, wall: w1, type: door, width_cm: [null, null], height_cm: [null], connects_to: hall}
+  - id: hall                            # the connector between rooms
+    ceiling_height_cm: [null, null]
+    walls:
+      - {id: w1, length_cm: [null, null]}
+      - {id: w2, length_cm: [null, null]}
+    openings: []
+
+damage:                                 # staged damage in ONE room, two different kinds
+  - {room: room1, wall: w2, class: water_stain, width_cm: null, height_cm: null, height_above_floor_cm: null}
+  - {room: room1, wall: w3, class: crack, width_cm: null, height_cm: null, height_above_floor_cm: null}
+
+captures:                               # filled in by you / by me as files arrive
+  - {path: data/raw/photos/home_tape_a, tier: photos, rooms: [room1, room2, hall]}
+  - {path: data/raw/photos/home_tape_b, tier: photos, rooms: [room1], note: "repeat capture for repeatability"}
+  - {path: data/raw/video/home_tape_walk1.MOV, tier: video}
+  - {path: data/raw/video/home_tape_walk2.MOV, tier: video, note: "repeat"}
