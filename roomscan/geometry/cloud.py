@@ -44,14 +44,29 @@ def _refine_level(y: np.ndarray, guess: float, band: float = 0.04) -> tuple[floa
     return float(np.median(near)), float(1.2533 * near.std() / np.sqrt(max(len(near), 1)))
 
 
-def find_levels(P: np.ndarray, cam_y: float) -> Levels:
-    """Floor = densest horizontal level below the camera; ceiling = densest level above it, if one is seen."""
+def find_levels(P: np.ndarray, cam_y: float, floor_rule: str = "lowest", support: float = 0.4) -> Levels:
+    """Floor and ceiling levels from a gravity-aligned cloud (+Y up).
+
+    floor_rule="lowest" (default since 0.5.2): the LOWEST flat level below the camera whose point count reaches
+    `support` x the densest one. "densest" (before 0.5.2) took the densest level, which picked the desk top in the study
+    and the bed in the bedroom (E12): their tops can hold as many points as the partly hidden floor.
+    Levels are found on 5 cm bins smoothed over 3 bins, so one level split across two bins still counts as one.
+    """
     y = P[:, 1]
     bins = np.arange(y.min(), y.max() + 0.01, 0.01)
     h, e = np.histogram(y, bins)
     centers = (e[:-1] + e[1:]) / 2
     below = centers < cam_y - 0.6
-    floor_guess = centers[below][np.argmax(h[below])]
+    if floor_rule == "densest":
+        floor_guess = centers[below][np.argmax(h[below])]
+    else:
+        hb = np.convolve(h, np.ones(5), "same")  # 5 cm window
+        cand = np.nonzero(below)[0]
+        thr = support * hb[cand].max()
+        strong = cand[hb[cand] >= thr]
+        # local maxima only, then the lowest of them
+        peaks = [i for i in strong if hb[i] >= hb[max(i - 5, 0):i + 6].max()]
+        floor_guess = centers[min(peaks)] if peaks else centers[below][np.argmax(h[below])]
     floor, fs = _refine_level(y, floor_guess)
     above = centers > cam_y + 0.3
     ceiling = cs = None

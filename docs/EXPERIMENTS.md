@@ -247,3 +247,42 @@ Something else at about 2.1 m passed the ceiling test; to fix before anything is
 
 Also fixed here: 0.3.1's "one model at a time" didn't work (the caller and a closure still held the geometry model),
 which made `house_a_portrait` run out of the 3.2 GB GPU cap.
+
+## E12: Why the photo-tier ceiling was wrong, and the fix (2026-10-02)
+
+Symptom (E11): study ceiling 2.10 m vs 2.743 m by tape, with a 90% interval (1.91–2.28 m) that excluded the truth.
+Script: `bench/local/e12_ceiling.py` (`diagnose`, `ablate`); reconstructions cached in `runs/e12/`.
+
+**Diagnosis.**
+* Camera height above the detected floor: 0.82–0.85 m (study), 0.86–0.93 m (bedroom), 0.74–0.79 m (store), but
+  1.43–1.54 m in kitchen, living and bathroom. A standing person holds the phone at ~1.4–1.6 m, so the "floor" in the
+  first three rooms is ~0.65 m too high.
+* Overlay of 3D heights on the photos: the ceiling tiles were found correctly; the "floor" layer covered the desk top
+  (study) and the bed (bedroom) as well as the floor.
+* Height histogram relative to the camera (study): real floor at −1.50…−1.60 m (~17k points), desk top at −0.85 m
+  (~15k points), ceiling at +1.20 m. The detector took the **densest** level below the camera: the desk won narrowly.
+* Not the cause: depth model, ceiling test, scale (walls were within +3…+7%), gravity.
+
+**Ablation** (only the floor rule changes; ceiling level identical in every variant):
+
+| Room | A: densest level (0.5.1) | B: lowest level ≥ 40% support | C: ≥ 20% | D: ≥ 60% | Tape |
+|---|---|---|---|---|---|
+| study | cam 0.85 m → 2.095 m | **cam 1.47 m → 2.722 m** | 2.722 | 2.722 | 2.743 m |
+| bedroom | cam 0.89 → 2.172 | **cam 1.36 → 2.641** | 2.641 | 2.174 (miss) | n/a |
+| kitchen | 2.671 | 2.670 | 2.670 | 2.670 | n/a |
+| living | 2.597 | 2.597 | 2.597 | 2.597 | n/a |
+| bathroom | 2.665 | 2.665 | 2.665 | 2.665 | n/a |
+| store | cam 0.77 → 1.17 | cam 0.77 → 1.17 | cam 1.48 → 1.879 (box tops) | 1.17 | n/a |
+
+Chosen: B (lowest flat level with ≥ 40% of the densest level's support), plus a plausibility guard: if the camera is
+not 1.0–1.95 m above the floor, no ceiling is reported (store).
+
+**Result, full pipeline on house_b (0.5.2):**
+* Study ceiling **2.723 m vs 2.743 m (−2.0 cm), interval holds the truth.**
+* Study walls also improved, because the wall band is measured from the floor: short side −1.6% (was +2.9%), long side
+  +1.6% (was +6.5%), area +0.0% (was +2.1%).
+* Store: "floor not found reliably", no ceiling reported (was a confident 1.17 m).
+* LiDAR regression check on `c7d28f72c6`: all 5 room areas and ceilings identical to E7.
+
+Note on the gate: the brief's ceiling gate (≤ 1.5 cm) is a LiDAR-tier figure. −2.0 cm on photos is close but
+outside it; tape itself is ±0.5 cm at best on a 2.7 m vertical reading.

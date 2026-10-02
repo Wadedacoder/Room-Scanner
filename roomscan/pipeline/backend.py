@@ -70,6 +70,10 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
     split=False treats everything as ONE room (photo tier: each folder is one room by protocol).
     """
     lev = find_levels(P, float(np.median(cam_xyz[:, 1])))
+    # Plausibility (E12): a handheld phone is 1.0-1.95 m above the floor. Outside that, the "floor" is a furniture top
+    # or clutter (the store room: 0.77 m), so ceiling heights measured from it would be confident garbage.
+    cam_h = float(np.median(cam_xyz[:, 1]) - lev.floor)
+    floor_ok = 1.0 <= cam_h <= 1.95
     y = P[:, 1] - lev.floor
     wall_pts = P[(y > 0.3) & (y < 2.0)]
     theta = p2.dominant_angle(wall_pts[:, [0, 2]])
@@ -110,7 +114,10 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
         area = p2.polygon_area(poly)
         area_sig = float(np.sqrt(perim_var) * np.sqrt(area) / 2 + perim * err.abs_m / 2 + 2 * err.rel * area)
         inside = MplPath(poly).contains_points(P_uv)
-        ceil = room_ceiling(P[inside, 1], lev.floor, area, voxel)
+        ceil = room_ceiling(P[inside, 1], lev.floor, area, voxel) if floor_ok else None
+        if not floor_ok:
+            warnings.append(f"{rid}: floor not found reliably (camera {cam_h:.2f} m above it; a handheld phone is "
+                            f"1.0-1.95 m), so no ceiling height is reported")
         room = {"id": rid, "label": label or f"room {k + 1}", "polygon": poly.round(4).tolist(), "walls": walls,
                 "openings": [], "floor_area": meas(area, area_sig, "m2"),
                 "perimeter": meas(perim, float(np.sqrt(perim_var)), "m")}
@@ -126,7 +133,7 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
         total_var += area_sig ** 2
     footprint = meas(total_area, float(np.sqrt(total_var)), "m2")
     return BackendResult(rooms, warnings, footprint,
-                         {"theta": theta, "maps": maps, "masks": masks, "levels": lev})
+                         {"theta": theta, "maps": maps, "masks": masks, "levels": lev, "camera_height_m": cam_h})
 
 
 def empty_plan(tier: str, source: str) -> dict:

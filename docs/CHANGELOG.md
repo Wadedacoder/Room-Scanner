@@ -8,6 +8,20 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-02 · ceiling fix: floor = lowest flat level, not the densest · tag `v0.5.2`
+
+### Fixed
+- **Ceilings measured from furniture.** The floor was the densest flat level below the camera; in the study that was
+  the desk top and in the bedroom the bed (camera "0.85 m above the floor"). Now the lowest flat level with ≥ 40% of
+  the densest level's support (`find_levels(floor_rule="lowest")`).
+  - Why (E12): study ceiling 2.10 m vs 2.743 m tape, interval excluding the truth (confident garbage).
+  - Checked (E12): study ceiling 2.723 m (−2.0 cm, interval holds); walls improve too (−1.6% / +1.6%, area 0.0%);
+    kitchen, living, bathroom unchanged; LiDAR `c7d28f72c6` identical.
+
+### Added
+- Floor plausibility guard in the shared back-end: camera must be 1.0–1.95 m above the floor, else no ceiling is
+  reported and a warning says why (the cluttered store room).
+
 ## [0.5.1] - 2026-10-02 · model memory release fixed; first protocol photos scored · tag `v0.5.1`
 
 ### Fixed
