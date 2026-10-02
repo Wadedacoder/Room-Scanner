@@ -165,10 +165,14 @@ class RoomGeom:
     walls: list[WallFit] = field(default_factory=list)
 
 
-def _axis_polygon(mask: np.ndarray, grid: Grid, eps: float = 0.08, close_m: float = 0.4) -> np.ndarray:
-    # fill furniture-shaped bites out of the floor before tracing; walls are re-fitted to wall points afterwards
+def _axis_polygon(mask: np.ndarray, grid: Grid, eps: float = 0.08, close_m: float = 0.4,
+                  others: np.ndarray | None = None) -> np.ndarray:
+    # fill furniture-shaped bites out of the floor before tracing; walls are re-fitted to wall points afterwards.
+    # The fill may not grow into space another room owns (rooms must not overlap).
     k = max(3, int(close_m / grid.res) | 1)
     mask = cv2.morphologyEx(mask.astype(np.uint8), cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (k, k)))
+    if others is not None:
+        mask &= ~cv2.dilate(others.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
     cnts, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     cnt = max(cnts, key=cv2.contourArea)
     approx = cv2.approxPolyDP(cnt, eps / grid.res, True)[:, 0, :].astype(float)
@@ -203,11 +207,14 @@ def fit_wall(axis: int, c: float, s: float, e: float, wall_uv: np.ndarray, insid
     lo, hi = sorted((s, e))
     along = wall_uv[:, 1 - axis]
     across = wall_uv[:, axis]
-    m = (along > lo + 0.1) & (along < hi - 0.1) & (np.abs(across - c) < search)
+    # The traced edge is the free-space boundary, i.e. just inside this room's face of the wall. Search a little
+    # outward (to the face) and a little inward, never through the wall to the neighbouring room's face.
+    rel = (across - c) * inside_sign  # > 0 is into the room
+    m = (along > lo + 0.1) & (along < hi - 0.1) & (rel > -0.15) & (rel < 0.10)
     pts = across[m]
     if len(pts) < 50:
         return WallFit(axis, c, 0.05, int(len(pts)))
-    # wall surface = densest 1 cm layer; skip-ahead of clutter in front of the wall by preferring the outer peak
+    # wall surface = densest 1 cm layer in that window
     h, edges = np.histogram(pts, np.arange(c - search, c + search + 0.01, 0.01))
     peak = edges[np.argmax(h)] + 0.005
     layer = pts[np.abs(pts - peak) < 0.02]
@@ -216,8 +223,8 @@ def fit_wall(axis: int, c: float, s: float, e: float, wall_uv: np.ndarray, insid
     return WallFit(axis, pos, sigma, int(len(layer)))
 
 
-def room_geometry(mask: np.ndarray, grid: Grid, wall_uv: np.ndarray) -> RoomGeom:
-    poly = _axis_polygon(mask, grid)
+def room_geometry(mask: np.ndarray, grid: Grid, wall_uv: np.ndarray, others: np.ndarray | None = None) -> RoomGeom:
+    poly = _axis_polygon(mask, grid, others=others)
     edges = rectilinear(poly)
     centroid = poly.mean(0)
     fits = []

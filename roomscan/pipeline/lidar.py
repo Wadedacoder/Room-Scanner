@@ -67,7 +67,11 @@ def run_lidar(path, cfg) -> tuple[dict, dict]:
     rooms, warnings = [], []
     total_area, total_var = 0.0, 0.0
     for k, mask in enumerate(masks):
-        g = p2.room_geometry(mask, maps.grid, wall_uv)
+        others = np.zeros_like(mask)
+        for j, m in enumerate(masks):
+            if j != k:
+                others |= m
+        g = p2.room_geometry(mask, maps.grid, wall_uv, others)
         if len(g.polygon) < 3:
             warnings.append(f"room {k}: could not trace a closed outline; skipped")
             continue
