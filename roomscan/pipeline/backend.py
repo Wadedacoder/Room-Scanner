@@ -77,7 +77,8 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
     y = P[:, 1] - lev.floor
     wall_pts = P[(y > 0.3) & (y < 2.0)]
     theta = p2.dominant_angle(wall_pts[:, [0, 2]])
-    maps = p2.build_maps(P, lev.floor, theta, cam_xyz[:, [0, 2]], rays, interior_mode=interior_mode)
+    maps = p2.build_maps(P, lev.floor, theta, cam_xyz[:, [0, 2]], rays,
+                         interior_mode="walls" if interior_mode == "box" else interior_mode)
     if split:
         masks = p2.split_rooms(maps.interior, maps.grid.res, maps.traj_px)
     else:
@@ -88,6 +89,19 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
 
     rooms, warnings = [], []
     total_area, total_var = 0.0, 0.0
+    if interior_mode == "box" and not split:
+        # sparse photos (E13): outermost long wall lines -> rectangle; falls back to the wall-enclosed outline
+        band = (y > 0.2) & (y < 1.8)
+        box = p2.manhattan_box(P[band][:, [0, 2]] @ R.T, y[band], cam_xyz[:, [0, 2]] @ R.T)
+        if box is not None:
+            u0, u1, v0, v1, _ = box
+            g = maps.grid
+            m = np.zeros(g.shape, bool)
+            a, b = g.to_px(np.array([[u0, v0], [u1, v1]]))
+            m[max(a[1], 0):b[1] + 1, max(a[0], 0):b[0] + 1] = True
+            masks = [m]
+        else:
+            warnings.append(f"{id_prefix}: no box outline found (too few long wall lines); using the wall flood")
     for k, mask in enumerate(masks):
         others = np.zeros_like(mask)
         for j, m in enumerate(masks):

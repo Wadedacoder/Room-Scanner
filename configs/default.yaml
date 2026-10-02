@@ -36,6 +36,10 @@ recon:                      # learned geometry for the photo and video tiers (se
   image_long_side: 504      # px, multiple of 14
   video_keyframes: 60       # keyframes sampled from a walkthrough clip
   window_overlap: 2         # shared views between consecutive windows
+  photo_outline: walls      # walls (flood inside observed walls) | box (outermost long wall lines, E13)
+  video_fps: 8.0            # frames per second sampled for camera tracking (COLMAP)
+  video_matcher: sequential # sequential | exhaustive (all pairs: finds revisits, slower)
+  video_seq_overlap: 10     # sequential matching: each frame is matched with this many following frames
 
 drift:
   method: posegraph         # off | posegraph   ("off" is for the ablation only)

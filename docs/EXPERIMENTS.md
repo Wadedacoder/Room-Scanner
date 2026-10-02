@@ -286,3 +286,36 @@ not 1.0–1.95 m above the floor, no ceiling is reported (store).
 
 Note on the gate: the brief's ceiling gate (≤ 1.5 cm) is a LiDAR-tier figure. −2.0 cm on photos is close but
 outside it; tape itself is ±0.5 cm at best on a 2.7 m vertical reading.
+
+## E13: Photo-tier wall sizes in the untaped rooms (2026-10-02)
+
+User report: house_b wall sizes look wrong. Only the study has tape, so this uses internal evidence.
+Script: `bench/local/e13_walls.py` (top-down per room: wall points, detected wall cells, cameras, outline).
+
+**What the top-down views show.**
+* Almost **no wall cells are detected** in photo clouds. The wall test (points over ≥ 35% of the 0.2–1.8 m height band)
+  is tuned for dense LiDAR; 2–4 photos give too sparse and noisy a cloud. The outline then comes from the flood inside
+  the hull of all points, and edges snap to the densest nearby layer, often furniture.
+* Per-wall support is very uneven: some walls rest on 0–22 points (study 3.56 m wall: 3; living 4.64 m wall: 22;
+  bedroom 2.96 m wall: 0), i.e. they are inferred, not observed.
+* The real walls are visible as thin point lines at the room edges; the study's outline happens to land on them.
+
+**Ablation: outline method** (house_b, pipeline 0.5.2 + option `recon.photo_outline`):
+
+| Room | walls flood (default) | box: outermost long wall lines |
+|---|---|---|
+| study (tape 3.124 × 3.30–3.51) | 3.07 × 3.56: −1.6% / +1.6%, area 0.0% | 3.35 × 3.51: +7.2% / +0.1%, area +7.7% |
+| bedroom | 2.96 × 3.07 | 1.28 × 2.10 (collapsed) |
+| kitchen | 2.45 × 2.55 | 2.45 × 2.75 |
+| living, store, bathroom | 2.79 × 4.64, 1.48 × 2.38, 1.55 × 2.48 | unchanged (box not found or same) |
+
+Rejected: the box rule overshoots onto lines beyond the wall (door frames, the next room) and collapses the bedroom.
+Kept as an option for future tests; default stays "walls".
+
+**Cross-capture repeatability (no tape needed):** the bedroom from `house_a` (7 photos, portrait + one landscape, run
+through the 0.5.1 letterbox for the first time) is 2.87 × 3.24 m (9.31 m²); from `house_b` (2 protocol photos)
+2.96 × 3.07 m (8.75 m²). Within ~5% of each other.
+
+**Open:** without tape for living, kitchen, store and bathroom, "bad" cannot be quantified. Asked the user for those
+dimensions. Candidate causes to test once they exist: per-room metric scale (scale factor varies 1.25–2.39 across
+rooms), uncovered walls with too few photos (2–3 per room vs 8 in the protocol), and outline edges snapping to furniture.

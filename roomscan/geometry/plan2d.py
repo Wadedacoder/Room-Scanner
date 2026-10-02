@@ -293,3 +293,45 @@ def largest_component(mask: np.ndarray) -> np.ndarray:
     sizes = np.bincount(lab.ravel())
     sizes[0] = 0
     return lab == int(np.argmax(sizes))
+
+
+def manhattan_box(band_uv: np.ndarray, band_h: np.ndarray, cam_uv: np.ndarray, bin_m: float = 0.02,
+                  min_cov: float = 0.25, min_span: float = 0.4):
+    """Sparse-view room outline (E13): a wall-aligned rectangle whose 4 sides are the OUTERMOST wall lines that run
+    along most of the room.
+
+    band_uv: wall-band points (0.2-1.8 m above floor) in the wall-aligned plan frame; band_h their heights.
+    A candidate wall at coordinate c on axis k is a 2 cm slice whose points cover >= min_cov of the height band (tall,
+    unlike furniture tops) and, along the other axis, span >= min_span of the room's length (a far wall seen through a
+    doorway is a short strip). Per side we take the outermost candidate. Returns (u0, u1, v0, v1, info) or None.
+    """
+    if len(band_uv) < 200:
+        return None
+    centre = np.median(cam_uv, axis=0)
+    nb = 16  # 10 cm height bands across 0.2-1.8 m
+    hb = np.clip(((band_h - 0.2) / 0.1).astype(int), 0, nb - 1)
+    sides, info = {}, {}
+    # first-pass room extent: robust spread of all band points
+    lo_all, hi_all = np.percentile(band_uv, 2, axis=0), np.percentile(band_uv, 98, axis=0)
+    for k in (0, 1):
+        x, y = band_uv[:, k], band_uv[:, 1 - k]
+        length = max(hi_all[1 - k] - lo_all[1 - k], 0.5)
+        edges = np.arange(x.min() - bin_m, x.max() + 2 * bin_m, bin_m)
+        idx = np.digitize(x, edges) - 1
+        cands = []
+        for b in np.unique(idx):
+            sel = np.abs(x - (edges[b] + bin_m / 2)) <= 1.5 * bin_m  # 3-bin window: walls are not perfectly thin
+            if sel.sum() < 30:
+                continue
+            cov = len(np.unique(hb[sel])) / nb
+            occ = np.unique(np.floor(y[sel] / 0.1)).size * 0.1  # metres of wall length with points
+            if cov >= min_cov and occ >= min_span * length:
+                cands.append((float(np.median(x[sel])), cov, occ, int(sel.sum())))
+        lo_side = [c for c in cands if c[0] < centre[k]]
+        hi_side = [c for c in cands if c[0] > centre[k]]
+        if not lo_side or not hi_side:
+            return None
+        lo_c, hi_c = min(lo_side, key=lambda c: c[0]), max(hi_side, key=lambda c: c[0])
+        sides[k] = (lo_c[0], hi_c[0])
+        info[k] = {"lo": lo_c, "hi": hi_c, "n_cands": len(cands)}
+    return sides[0][0], sides[0][1], sides[1][0], sides[1][1], info

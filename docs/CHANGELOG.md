@@ -8,6 +8,15 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Added
+- `recon.photo_outline` option (`walls` default | `box`): the box rule (outermost long wall lines) was tested in E13
+  and rejected (study area +7.7%, bedroom collapsed); kept only for future experiments.
+- `bench/local/e13_walls.py`: top-down diagnosis of photo-tier rooms (wall points, cameras, outline, wall support).
+
+### Measured (E13)
+- Bedroom repeatability across two photo sets: 2.87 × 3.24 m vs 2.96 × 3.07 m (~5%). First real mixed
+  portrait/landscape folder (house_a bedroom) runs, confirming the 0.5.1 letterbox change on real data.
+
 ## [0.5.2] - 2026-10-02 · ceiling fix: floor = lowest flat level, not the densest · tag `v0.5.2`
 
 ### Fixed

@@ -50,7 +50,7 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
         floor = find_levels(P, float(np.median(cams[:, 1]))).floor
         rays = wall_rays(pts, cams, floor)
         res = rooms_from_cloud(P, cams, rays, PHOTO_ERR, VOXEL, split=False, id_prefix=name, label=name,
-                               interior_mode="walls")  # 8 views are too sparse to carve (E6)
+                               interior_mode=cfg["recon"]["photo_outline"])  # sparse views can't carve (E6)
         warnings += res.warnings
         debug[name] = {"scale": rec.scale, "focal_pred_err": rec.focal_pred_err, "n_photos": len(photos),
                        "focal_source": photos[0].focal_source, "backend": res.debug}

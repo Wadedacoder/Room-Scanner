@@ -63,7 +63,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", default="sweep")
     ap.add_argument("--n", type=int, default=8)
-    ap.add_argument("--interior", default="carve", choices=["carve", "walls"])
+    ap.add_argument("--interior", default="carve", choices=["carve", "walls", "box"])
     args = ap.parse_args()
     global MODE
     MODE = args.interior
