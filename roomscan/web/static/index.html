@@ -122,6 +122,27 @@ async function api(path, opts) {
   return r.json();
 }
 
+function esc(t) {
+  return String(t ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+}
+function detailsHtml(plan) {
+  const ops = plan.rooms.flatMap(r => (r.openings || []).map(o =>
+    `<li>${esc(r.label)}: ${esc(o.type)} ${fmtM(o.width, "m")}${o.connects_to ? " → " + esc(o.connects_to) : ""}
+     <span class="meta">(${esc(o.evidence || "")})</span></li>`));
+  const adj = (plan.adjacency || []).map(a => `<li>${esc(a.a)} ↔ ${esc(a.b)} <span class="meta">${esc(a.via)}</span></li>`);
+  const dmg = (plan.damage || []).map(d => `<li><b>${esc(d.id)}</b> ${esc(d.class.replace("_", " "))} on ${esc(d.surface_id)}:
+     ${fmtM(d.area, "m²")} <span class="meta">(confidence ${esc(d.confidence)}; ${esc((d.evidence_frames || []).join(", "))})</span></li>`);
+  const flags = (plan.concealed_flags || []).map(f => `<li><b>${esc(f.rule_id)}</b> on ${esc(f.surface_id)}: ${esc(f.rationale)}</li>`);
+  const scope = (plan.scope || []).map(i => `<tr><td>${esc(i.code)}</td><td>${esc(i.description)}</td><td>${esc(i.surface_id)}</td>
+     <td class="n">${fmtM(i.quantity, i.quantity.unit)}</td><td class="meta">${esc((i.source || []).join(", "))}</td></tr>`);
+  const list = (title, items, empty) => `<div><div class="eyebrow">${title}</div>${items.length ?
+    `<ul class="warnings">${items.join("")}</ul>` : `<span class="meta">${empty}</span>`}</div>`;
+  return list("Doors and windows", ops, "none detected") + list("Connected rooms", adj, "no rooms linked") +
+    list("Damage regions", dmg, "none detected") + list("Concealed-damage flags (rule that fired)", flags, "none") +
+    `<div><div class="eyebrow">Scope line items</div>${scope.length ? `<div class="tablewrap"><table><thead><tr><th>Code</th>
+     <th>Item</th><th>Surface</th><th>Quantity (90%)</th><th>From</th></tr></thead><tbody>${scope.join("")}</tbody></table></div>`
+     : `<span class="meta">none</span>`}</div>`;
+}
 function fmtM(m, unit, digits = 2) {
   if (!m) return "not observed";
   const half = (m.hi - m.lo) / 2;
@@ -299,6 +320,7 @@ async function show(id) {
       <a class="btn" href="/api/jobs/${id}/plan.json">Download plan.json</a></div>
     <div class="tablewrap"><table><thead><tr><th>Room</th><th>Floor area (90%)</th><th>Ceiling (90%)</th><th>Walls</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
+    ${detailsHtml(plan)}
     <div class="card" id="tape" style="padding:12px"></div>
     <div><div class="eyebrow">Warnings from the pipeline</div><ul class="warnings">${plan.warnings.map(w => `<li></li>`).join("")}</ul></div>
     <details><summary>Run log</summary><pre class="log"></pre></details>`;

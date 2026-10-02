@@ -9,6 +9,8 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 ## [Unreleased]
 
 ### Added
+- Website shows doors/windows (with `connects_to`), connected rooms, damage regions, concealed-damage flags with the
+  rule that fired, and scope line items (all text escaped); checked by rendering in headless Chrome.
 - plan.svg draws damage: wall regions as a red band at their measured span, floor/ceiling regions listed in the room,
   counts of damage / flags / scope in the header. A detection that lands on no room surface (furniture, through a
   doorway) is now reported as a warning instead of dropped silently.
