@@ -4,6 +4,8 @@ Phone capture (photos, video or LiDAR) in, then a dimensioned, stitched floor pl
 
 * Plan: [docs/PLAN.md](docs/PLAN.md)
 * Capture protocol: [docs/CAPTURE_PROTOCOL.md](docs/CAPTURE_PROTOCOL.md)
+* Walk-in runbook: [docs/WALKIN.md](docs/WALKIN.md)
+* Benchmark: [docs/BENCHMARK.md](docs/BENCHMARK.md) · Technical report: [docs/TECH_REPORT.md](docs/TECH_REPORT.md)
 * Compliance matrix: [docs/COMPLIANCE.md](docs/COMPLIANCE.md)
 * Output schema: [schema/plan.schema.json](schema/plan.schema.json)
 
