@@ -142,3 +142,29 @@ scale error up to +18%). Today `check_capture.py` blocks such photos instead of 
 run with the predicted focal, and compare wall error and interval width against the same set with EXIF. Decide
 between (a) refusing, (b) running with predicted focal and a much wider interval, (c) a device-model focal lookup.
 The interval must widen enough to stay calibrated; confident garbage on thin input caps the total score.
+
+## E8: First real Camera-app photos: the study (2026-10-02)
+
+8 variants of one 13-photo turn (`bench/datasets/study_photo_variants.yaml`), iPhone 14 Plus, scored against tape
+(study ≈ 3.40 × 3.12 m incl. cove side, 10.6 m², ceiling 2.74 m; wall order not yet recorded, so long/short sides are compared).
+Code at `5e8be9f`, `lite` profile, M1.
+
+| Variant | n | Long wall | Short wall | Area | Truth in area interval |
+|---|---|---|---|---|---|
+| uw05_portrait (0.5×) | 4 | −11% | −18% | −27% | no |
+| uwcrop (1.54 mm / 26 mm-eq) | 2 | −13% | −19% | −29% | no |
+| w1x_landscape | 3 | +13% | +12% | +27% | yes |
+| w1x (mixed orientation) | 6 | +46% | +11% | +61% | no |
+| landscape_mixed (3 intrinsics) | 6 | +27% | +34% | +70% | no |
+| portrait_mixed (0.5× + 1×) | 7 | +48% | −83% | +97% | no (6 walls) |
+| w1x_portrait | 3 | −54% | −79% | −91% | no |
+| uw05 (0.5×, mixed orientation) | 5 | crash | | | |
+
+* **Crash:** a room folder mixing portrait and landscape fails in scale chaining: DA3 center-crops each window to its
+  smallest image (378×378 vs 504×378), then the shared-view depth maps are compared with mismatched shapes
+  (`operands could not be broadcast together (3,378,378) (3,504,378)`). Whether it fires depends on window grouping
+  (`w1x` mixes orientations and ran). Walk-in risk: users will mix orientations.
+* **Overconfidence:** truth outside the area interval in 6 of 7 runs. Intervals are not calibrated on real photos.
+* **No ceiling height** on any photo run.
+* 0.5× sets are the most consistent (−11 to −19% on walls), the same under-measurement as E6. 1× sets swing ±50%+.
+* None of these sets follows the protocol (8 landscape 0.5×); a compliant study capture is still needed.
