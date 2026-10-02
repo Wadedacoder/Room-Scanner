@@ -20,7 +20,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done · ❌ fails gate (repor
 | 14 | Opening width gate (P2) | bench/gates.py | report table | ⬜ |
 | 15 | Ceiling height gate + bias/unrepeatable verdict (P2) | bench/gates.py | report table | ⬜ |
 | 16 | Repeatability gate (P2) | bench/gates.py | repeatability table | ⬜ |
-| 17 | Drift handling + on/off ablation (P2) | roomscan/stitch/drift.py | ablation figure | ⬜ |
+| 17 | Drift handling + on/off ablation (P2) | roomscan/stitch/drift.py, bench/local/e7_drift_ablation.py | E7 table (revisit misalignment 19.7 → 3.5 cm) | 🟨 (no GT yet) |
 | 18 | Photo-tier whole-property stitch gate (P2) | roomscan/stitch/photo_graph.py | report | ⬜ |
 | 19 | Head-to-head vs magicplan, 2 rooms (P3) | bench/h2h/ | table + export | ⬜ |
 | 20 | Fix loop declaration, before/after, diff (P4) | fixloop/ | bundle | ⬜ |

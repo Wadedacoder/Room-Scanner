@@ -131,3 +131,27 @@ On the proxy set (`c00a170fe1`, 8 sweep stills per room) it first gave rooms 43�
   overlapping 0.5× ring is the intended fix and can only be tested on real photos.
 * **Cause 3, open:** an open-ended corridor leaks into neighbouring rooms without doorway detection.
 * Runtime: 410 s for 3 rooms × 8 photos on the M1, not yet profiled.
+
+## E7: Drift correction, with an on/off comparison (2026-10-02)
+
+`roomscan/stitch/drift.py`, `bench/local/e7_drift_ablation.py`. Method: cut the walk into ~4 s fragments; where the
+walk revisits a place, match the two fragments' top-down wall images (yaw search ±3°, shift by phase correlation,
+kept only if wall overlap improves and the shift stays under 30 cm); solve a small linear pose graph (rotations,
+then translations). Corrections are yaw + translation only; ARKit's gravity axis is trusted.
+
+First attempt, Open3D point-to-plane ICP on fragment clouds: diverged (metre-scale shifts, 40–90° rotations on
+revisits), and the graph returned no correction at all. Replaced.
+
+| Walk | Drift | Revisits matched | Revisit misalignment | Wall sharpness | Footprint | Time |
+|---|---|---|---|---|---|---|
+| c7d28f72c6 (215 s) | off | n/a | 19.7 cm | 1.255 | 65.41 m² | 101 s |
+| | **on** | 27 (78 rejected) | **3.5 cm** | **1.292** | 63.52 m² | 210 s |
+| 1a8384c3f6 (115 s) | off | n/a | n/a | 1.240 | 58.47 m² | 55 s |
+| | on | 0 (18 rejected) | n/a | 1.240 | 58.47 m² (unchanged) | 76 s |
+
+* ARKit drift is real on the long walk (about 20 cm where it revisits places). The correction cuts it to 3.5 cm and
+  makes walls sharper.
+* Room 4 of the long walk changes from 4.77 to 3.60 m² with correction on. Which is right needs tape ground truth.
+* On the short walk no revisit passed the acceptance test, so nothing is changed. This is deliberate: a weak match
+  should not move the plan.
+* Speed: matching on 4 cm images with a coarse-then-fine yaw search took the step from ~12 min to ~110 s.
