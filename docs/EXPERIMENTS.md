@@ -106,3 +106,28 @@ Job `bench/kaggle/model_eval_v3/`. Video sets of 60 and 120 frames (`c00a170fe1`
 * Engineering notes: pycolmap and torch each bundle OpenMP and abort if loaded in one process, so COLMAP runs in a
   subprocess. DA3's top-level import pulls open3d and pycolmap through its exporters; `roomscan/recon/da3_loader.py`
   stubs that one module.
+
+## E6: Photo tier end to end, and why it under-measures rooms (2026-10-02)
+
+`roomscan run <photo folder>` now runs the photo tier (DA3-Base + DA3Metric with the EXIF focal, shared back-end).
+On the proxy set (`c00a170fe1`, 8 sweep stills per room) it first gave rooms 43–69% too small. Ablation in
+`bench/local/e6_photo_tier_ablation.py`; reference = LiDAR-tier area of the same room from the full walk.
+
+| Room (LiDAR area) | Room outline method | A: shipped | B: true camera positions | C: LiDAR depth + true positions |
+|---|---|---|---|---|
+| living (7.41 m²) | carve rays | 2.64 | 2.07 | 2.05 |
+| | **enclosed by walls** | 2.64* | 2.07* | **6.18 (−17%)** |
+| corridor (8.35 m²) | carve rays | 3.89 | 2.97 | 9.35 |
+| | enclosed by walls | 6.33 | 6.27 | 20.77 (leaks through open ends) |
+| bathroom (5.62 m²) | carve rays | 3.17 | 4.34 | 3.13 |
+| | **enclosed by walls** | 3.17* | **5.16 (−8%)** | **5.25 (−7%)** |
+
+\* the wall flood found no open space around the learned camera positions, so it fell back to carving.
+
+* **Cause 1, fixed:** ray carving needs thousands of viewpoints. With 8 it only covers the view cones (C: perfect
+  data still gave 28% of the living room). The photo tier now outlines rooms from the observed walls.
+* **Cause 2, open:** learned camera positions on these proxy frames are too wrong for the wall outline (A vs B).
+  This is the non-overlap failure from E1: the proxy frames are 1× portrait with 135–163° gaps. The protocol's
+  overlapping 0.5× ring is the intended fix and can only be tested on real photos.
+* **Cause 3, open:** an open-ended corridor leaks into neighbouring rooms without doorway detection.
+* Runtime: 410 s for 3 rooms × 8 photos on the M1, not yet profiled.
