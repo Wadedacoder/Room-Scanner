@@ -60,8 +60,19 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     names = extract_frames(path, frames_dir, rc["video_fps"], SFM_LONG_SIDE)
     w, h = Image.open(frames_dir / names[0]).size
     f_guess = (max(w, h) / 2) / np.tan(np.radians(FOV_1X_DEG / 2))
+    learned = None
+    if rc["video_features"] == "disk_lightglue":
+        from roomscan.recon import checkpoint as ck
+        from roomscan.recon.learned_matches import sequential_matches
+
+        key = ck.key_for("video_matches", meta={"names": names, "overlap": rc["video_seq_overlap"]},
+                         files=[frames_dir / n for n in names])
+        out = work / f"matches_{key}.npz"
+        if not ck.enabled():
+            out.unlink(missing_ok=True)
+        learned = sequential_matches(frames_dir, names, rc["video_seq_overlap"], cfg, out)
     sfm = run_sfm(frames_dir, names, f_guess, work, rc["video_matcher"], rc["video_seq_overlap"],
-                  rc["video_abs_pose_min_inliers"])
+                  rc["video_abs_pose_min_inliers"], learned)
     t_sfm = time.time() - t0
     f_px = float(sfm.K[0, 0])
     fov = float(np.degrees(2 * np.arctan(max(w, h) / 2 / f_px)))

@@ -40,7 +40,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | 3.2 | Concealed-damage flags with fired rule; scope line items | P2 | ✅ |
 | 3.3 | Opening-width gate scorer; ceiling gate; repeatability table (`bench/gates.py`) | P2, D5 | 🟨 gates.py done; repeatability ✅ photos + video (3 live runs each, identical); door widths ⏸ tape |
 
-| 2.5 | Video: register more of a multi-room walk (learned features in COLMAP; longer doorway bridges) | P1 video | 🟨 E22: looser COLMAP thresholds rejected (more frames, wrong poses); learned features ⬜ |
+| 2.5 | Video: register more of a multi-room walk (learned features in COLMAP; longer doorway bridges) | P1 video | 🟨 E22 looser thresholds and E23 learned matches both rejected (more frames, wrong poses); open |
 
 ## Benchmark and deliverables
 | # | Item | Serves | Status |

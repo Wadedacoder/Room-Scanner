@@ -539,3 +539,30 @@ doors of placed rooms? Detected openings (pipeline 0.7.x):
   (`connects_to` on both, the adjacency names the door pair). house_b: living.o2 ↔ kitchen.o1 (0.65 m apart);
   living ↔ bathroom has no door pair within 0.8 m, so none is claimed.
 * The fix for unlinked rooms remains the protocol's look-through photo per doorway (E14, backlog 0.7).
+
+## E23: Learned matches (DISK + LightGlue) inside COLMAP for video (2026-10-03) · negative result
+
+`recon.video_features: disk_lightglue` (`roomscan/recon/learned_matches.py`): DISK keypoints (2048, at 640 px) and
+LightGlue matches for each frame and its 10 successors are computed in the torch process, imported into the COLMAP
+database in place of SIFT, geometrically verified by COLMAP, then mapped exactly as before (4 seeds).
+
+| study_walk1.MOV | SIFT (default) | DISK + LightGlue |
+|---|---|---|
+| frames registered | 175 / 272 | **257 / 272** |
+| pieces | 95, 51, 24, 18, 12 | 134, 90, 27, 24, 22 |
+| per-keyframe metric-scale spread | 20.4% | **122.9%** |
+| scale term in intervals | 9.6% | 54.4% |
+| short / long side | −4.0% / −6.9% | **+75.0% / +83.5%** |
+| floor area | 9.48 m² (−10.8%) | 32.0 m² (+201%), interval still holds |
+| runtime | ~2 min (COLMAP replayed) / ~6 min live | 41 min (matching 23 min, COLMAP 17 min) |
+
+* Learned matches register almost every frame, but the poses are inconsistent (the per-keyframe scale spread is 6×
+  SIFT's), and the room comes out 3× too large. Same lesson as E22: more registered frames are worth nothing if they
+  are placed wrongly.
+* The intervals reacted as designed: the measured scale spread widened the area interval enough to contain the tape,
+  i.e. the output says "this is not trustworthy" rather than reporting 32 m² confidently.
+* Engineering found on the way: LightGlue on MPS leaves ~90 MB per call in the allocator cache; clearing it every 200
+  calls hit the 5.5 GB watchdog twice, clearing per frame keeps matching at 1.6 GB.
+* Not pursued further tonight (each attempt costs ~40 min). Likely causes to test next: repetitive texture
+  (cupboard, whiteboard) giving consistent-but-wrong LightGlue matches that pass the epipolar check, and the lower
+  640 px keypoint precision. SIFT stays the default; the switch stays for experiments.

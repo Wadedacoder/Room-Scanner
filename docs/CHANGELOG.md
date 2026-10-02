@@ -27,6 +27,8 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 - `scripts/setup_models.sh` didn't install `kornia` (photo cross-room links), so its weight prefetch failed.
 
 ### Health watch
+- 2026-10-03 03:19 FAIL (job > 20 min): E23 (study video, DISK+LightGlue matching ~23 min, then COLMAP 4 seeds)
+  progressing (seed 3 of 4 mapping); left running.
 - 2026-10-03 00:49 FAIL: the house video run (55 min) was **thrashing** (2.1 GB swap in use, 30% memory free) while
   the watchdog saw only 200 MB, because it measured RSS. Killed it (COLMAP solve is checkpointed). Fixed the watchdog:
   it now measures macOS `phys_footprint` (GPU/MPS + compressed + swapped), verified by killing a 1.6 GB MPS tensor
@@ -38,6 +40,8 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   expected); a 212 s walk at 8 fps with best-of-4 single-threaded mapping is ~7 min per seed on the M1.
 
 ### Added
+- `recon.video_features: disk_lightglue` (experimental, off by default): E23 registers 257/272 study frames vs 175
+  but the geometry is wrong (+75% walls); rejected as default. LightGlue MPS cache is cleared per frame (1.6 GB peak).
 - Photo tier pairs the doors of visually linked rooms (`connects_to` + adjacency names the door pair); E25 explains
   why unlinked rooms are not placed by door geometry (house_b: no unique fit).
 - **Local damage detector, no API key** (E24): OWLv2 (Apache-2.0) is the default `damage.backend`; Claude is optional.

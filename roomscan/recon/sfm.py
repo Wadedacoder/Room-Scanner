@@ -38,18 +38,20 @@ class SfmResult:
 
 
 def run_sfm(frames_dir: Path, names: list[str], focal_guess: float, work: Path, matcher: str = "sequential",
-            overlap: int = 10, min_inliers: int = 30) -> SfmResult:
+            overlap: int = 10, min_inliers: int = 30, learned_matches: Path | None = None) -> SfmResult:
+    """learned_matches: .npz from roomscan.recon.learned_matches (DISK + LightGlue) used instead of SIFT matching."""
     work.mkdir(parents=True, exist_ok=True)
     from roomscan.recon import checkpoint as ck
 
     key = ck.key_for("sfm", meta={"names": names, "focal_guess": round(float(focal_guess), 3), "matcher": matcher,
-                                  "overlap": overlap, **({"min_inliers": min_inliers} if min_inliers != 30 else {})}, files=[frames_dir / n for n in names])
+                                  "overlap": overlap, **({"min_inliers": min_inliers} if min_inliers != 30 else {}),
+                                  **({"learned": learned_matches.name} if learned_matches else {})}, files=[frames_dir / n for n in names])
     done = work / f"sfm_{key}.json"
     if ck.enabled() and done.exists():  # checkpoint: same frames + settings already solved
         return _parse(json.loads(done.read_text()), len(names))
     out = work / "sfm.json"
     cmd = [sys.executable, "-m", "roomscan.recon.sfm", str(frames_dir), str(work), str(focal_guess), json.dumps(names),
-           matcher, str(overlap), str(min_inliers)]
+           matcher, str(overlap), str(min_inliers), str(learned_matches or "")]
     subprocess.run(cmd, check=True, capture_output=True, text=True)
     out.replace(done)
     return _parse(json.loads(done.read_text()), len(names))
@@ -67,7 +69,7 @@ def _parse(d: dict, n: int) -> SfmResult:
 
 
 def _child(frames_dir: str, work: str, focal_guess: str, names_json: str, matcher: str = "sequential",
-           overlap: str = "10", min_inliers: str = "30") -> None:
+           overlap: str = "10", min_inliers: str = "30", learned: str = "") -> None:
     import shutil
 
     import pycolmap
@@ -95,7 +97,11 @@ def _child(frames_dir: str, work: str, focal_guess: str, names_json: str, matche
                               reader_options=reader, extraction_options=ext, device=pycolmap.Device.cpu)
     mopt = pycolmap.FeatureMatchingOptions()
     mopt.num_threads = 1
-    if matcher == "exhaustive":
+    if learned:
+        from roomscan.recon.learned_matches import import_into_colmap
+
+        import_into_colmap(db, Path(learned))
+    elif matcher == "exhaustive":
         pycolmap.match_exhaustive(db, matching_options=mopt, device=pycolmap.Device.cpu)
     else:
         pair = pycolmap.SequentialPairingOptions()
@@ -162,4 +168,4 @@ def _child(frames_dir: str, work: str, focal_guess: str, names_json: str, matche
 
 
 if __name__ == "__main__":
-    _child(*sys.argv[1:8])
+    _child(*sys.argv[1:9])
