@@ -36,7 +36,10 @@ rooms:
     walls: []
     openings: []
 
-adjacency: []                           # e.g. [study, living]; still to record
+adjacency:                              # owner-confirmed 2026-10-02: every room opens onto the living/dining hall
+  - [study, living]
+  - [bedroom, living]
+  - [kitchen, living]
 
 damage:                                 # staged damage in ONE room, two different kinds; not staged yet
   - {room: null, wall: null, class: water_stain, width_cm: null, height_cm: null, height_above_floor_cm: null}
@@ -48,4 +51,4 @@ captures:                               # filled in by you / by me as files arri
   - {path: data/raw/photos/house_batch2_src, tier: photos, rooms: [bedroom, living, kitchen], note: "4622-4628 bedroom, 4629-4634 + 4636 living, 4635 kitchen (single photo: below the 2-photo minimum)"}
   - {path: data/raw/photos/house_a, tier: photos, rooms: [study, bedroom, living]}
   - {path: data/raw/photos/house_a_portrait, tier: photos, rooms: [study, bedroom, living], note: "house_a minus 4628 (the one landscape photo) to avoid the E8 orientation crash"}
-  - {path: data/raw/video/house_IMG_4637.MOV, tier: video, rooms: null, note: "50 s; coverage not yet stated"}
+  - {path: data/raw/video/house_IMG_4637.MOV, tier: video, rooms: null, note: "50 s walk through several rooms (owner); exact rooms and start/end point not stated"}
