@@ -8,6 +8,11 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Added
+- plan.svg draws damage: wall regions as a red band at their measured span, floor/ceiling regions listed in the room,
+  counts of damage / flags / scope in the header. A detection that lands on no room surface (furniture, through a
+  doorway) is now reported as a warning instead of dropped silently.
+
 ## [0.8.0] - 2026-10-03 · damage chain, honest video intervals, walk-in robustness · tag `v0.8.0`
 
 ### Fixed (robustness sweep, `bench/local/sweep.sh`: all 25 captures on disk)

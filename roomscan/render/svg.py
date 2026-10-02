@@ -1,4 +1,4 @@
-"""plan.json -> plan.svg: rooms, dimensioned walls, area and ceiling labels."""
+"""plan.json -> plan.svg: rooms, dimensioned walls, openings, damage, area and ceiling labels."""
 
 from __future__ import annotations
 
@@ -52,7 +52,30 @@ def render_svg(plan: dict, px_per_m: float = 80.0, margin: float = 1.0) -> str:
                        f'stroke-dasharray="4 3"/>')
             out.append(f'<text x="{(x0 + x1) / 2:.1f}" y="{(y0 + y1) / 2 - 7:.1f}" font-size="10" text-anchor="middle" '
                        f'fill="{col}">{o["type"]} {o["width"]["value"]:.2f}</text>')
+        # damage: wall regions as a red band at their measured span along the wall; floor/ceiling regions are listed
+        # in the room (their surface coordinates are room-local, so drawing them would misplace them in a stitched plan)
+        flat = []
+        for d in plan.get("damage", []):
+            w = walls_by_id.get(d["surface_id"])
+            if w is None:
+                if d["surface_id"].startswith(r["id"] + "."):
+                    flat.append(d)
+                continue
+            us = [q[0] for q in d.get("polygon_on_surface", [])]
+            if not us:
+                continue
+            a, b = np.array(w["start"]), np.array(w["end"])
+            u = (b - a) / max(np.linalg.norm(b - a), 1e-9)
+            (x0, y0), (x1, y1) = xy(a + u * min(us)), xy(a + u * max(us))
+            out.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="#D62728" stroke-width="7" '
+                       f'stroke-opacity="0.8"/>')
+            out.append(f'<text x="{(x0 + x1) / 2:.1f}" y="{(y0 + y1) / 2 + 16:.1f}" font-size="10" text-anchor="middle" '
+                       f'fill="#D62728">{d["id"]} {d["class"].replace("_", " ")}</text>')
         cx, cy = xy(np.mean(r["polygon"], axis=0))
+        for i, d in enumerate(flat):
+            surf = d["surface_id"].rsplit(".", 1)[-1]
+            out.append(f'<text x="{cx:.1f}" y="{cy + 46 + 13 * i:.1f}" font-size="10" text-anchor="middle" fill="#D62728">'
+                       f'{d["id"]} {d["class"].replace("_", " ")} on {surf}, {d["area"]["value"]:.2f} m²</text>')
         ceil = _fmt(r.get("ceiling_height"))
         out.append(f'<text x="{cx:.1f}" y="{cy:.1f}" font-size="14" font-weight="bold" text-anchor="middle" fill="{c}">'
                    f'{r["label"]}</text>')
@@ -63,5 +86,8 @@ def render_svg(plan: dict, px_per_m: float = 80.0, margin: float = 1.0) -> str:
     fp = plan["property"]["footprint_area"]
     out.append(f'<text x="12" y="20" font-size="13" fill="#222">{plan["capture"]["tier"]} · footprint '
                f'{_fmt(fp, "m²")} · {len(plan["rooms"])} rooms</text>')
+    out.append(f'<text x="12" y="37" font-size="11" fill="#D62728">{len(plan.get("damage", []))} damage regions · '
+               f'{len(plan.get("concealed_flags", []))} concealed-damage flags · {len(plan.get("scope", []))} '
+               'scope items</text>')
     out.append("</svg>")
     return "\n".join(out)

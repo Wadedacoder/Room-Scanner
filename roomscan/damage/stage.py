@@ -70,7 +70,9 @@ def room_damage(room: dict, images, depth: np.ndarray, K: np.ndarray, c2w: np.nd
     for det in _to_view(raw, idx, (dh, dw), source, min_conf):
         i = det.view
         r = project_detection(det, depth[i], K[i], c2w[i], floor_y, ceiling_y, theta, room["walls"], room["id"])
-        if r is None:
+        if r is None:  # not on the floor, the ceiling or within 0.5 m of a wall (furniture, through a doorway)
+            warnings.append(f"{room['id']}: {det.cls} detection in {view_names[i] if view_names else i} is not on a "
+                            "room surface (furniture, or seen through a doorway); not reported")
             continue
         z = float(np.median(depth[i][depth[i] > 0])) if (depth[i] > 0).any() else 2.0
         px = z / K[i][0, 0]  # one depth pixel's footprint at the region

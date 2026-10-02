@@ -114,3 +114,18 @@ def test_owlv2_nms_keeps_best_of_overlapping_boxes():
 
     boxes = np.array([[0, 0, 10, 10], [1, 1, 10, 10], [50, 50, 60, 60]], float)
     assert _nms(boxes, np.array([0.3, 0.5, 0.4])) == [1, 2]
+
+
+def test_svg_draws_wall_and_ceiling_damage():
+    from roomscan.render.svg import render_svg
+
+    room = {"id": "r", "label": "r", "polygon": [[0, 0], [4, 0], [4, 3], [0, 3]], "openings": [],
+            "walls": [{"id": "r.w1", "start": [0, 0], "end": [4, 0], "length": meas(4.0, 0.02, "m")}],
+            "floor_area": meas(12.0, 0.3, "m2"), "ceiling_height": None}
+    dmg = [{"id": "D1", "surface_id": "r.w1", "class": "water_stain", "polygon_on_surface": [[1, 0], [2, 0], [2, 1]],
+            "area": meas(0.5, 0.05, "m2")},
+           {"id": "D2", "surface_id": "r.ceiling", "class": "mold", "polygon_on_surface": [[0, 0], [1, 1]],
+            "area": meas(0.3, 0.05, "m2")}]
+    svg = render_svg({"rooms": [room], "damage": dmg, "concealed_flags": [{}], "capture": {"tier": "photos"},
+                      "property": {"footprint_area": meas(12.0, 0.3, "m2")}})
+    assert "D1 water stain" in svg and "D2 mold on ceiling" in svg and "1 concealed-damage flags" in svg
