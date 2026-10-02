@@ -1,0 +1,52 @@
+# Concealed-damage rules and scope line items. Every flag and line item in plan.json names the rule that produced it.
+# Quantities are computed from the damage region's metric extent (m, m2) and the wall/room dimensions.
+# Codes are Xactimate-style category/selector labels for readability; they are not priced here.
+
+concealed_rules:
+  - id: R-WATER-BASE
+    when: {class: water_stain, surface: wall, bottom_below_m: 0.30}
+    flag: "Moisture may have wicked into the wall cavity and insulation behind this stain; check the bottom plate and
+      drywall back with a moisture meter."
+  - id: R-WATER-HIGH
+    when: {class: water_stain, surface: wall, bottom_above_m: 1.50}
+    flag: "Stain high on the wall: possible leak from above (roof, plumbing or the room above); inspect the ceiling void."
+  - id: R-CEIL-STAIN
+    when: {class: water_stain, surface: ceiling}
+    flag: "Ceiling stain: the leak source is above the ceiling; inspect the void, joists and insulation over the stain."
+  - id: R-MOLD-ANY
+    when: {class: mold}
+    flag: "Visible mould usually extends beyond what is visible; expect growth behind the surface and on its back side."
+  - id: R-CRACK-LONG
+    when: {class: crack, min_length_m: 0.60}
+    flag: "Long crack: possible structural movement or settlement; check door/window frames on this wall for racking."
+
+scope_rules:
+  - id: S-WALL-STAIN
+    when: {class: water_stain, surface: wall}
+    items:
+      - {code: DRY-SEAL, description: "Seal stain with stain-blocking primer", qty: region_area_m2, margin: 0.25}
+      - {code: PNT-WALL, description: "Paint wall (2 coats)", qty: wall_area_m2}
+  - id: S-WALL-STAIN-BASE
+    when: {class: water_stain, surface: wall, bottom_below_m: 0.30}
+    items:
+      - {code: DRY-FLOOD, description: "Flood cut drywall 0.6 m above floor", qty: wall_length_m}
+      - {code: DRY-RPL, description: "Replace drywall, lower 0.6 m", qty: flood_cut_area_m2}
+  - id: S-CEIL-STAIN
+    when: {class: water_stain, surface: ceiling}
+    items:
+      - {code: DRY-SEAL, description: "Seal ceiling stain with stain-blocking primer", qty: region_area_m2, margin: 0.25}
+      - {code: PNT-CEIL, description: "Paint ceiling (2 coats)", qty: floor_area_m2}
+  - id: S-MOLD
+    when: {class: mold}
+    items:
+      - {code: WTR-MOLD, description: "Mould remediation: remove and treat affected material", qty: region_area_m2, margin: 0.5}
+  - id: S-CRACK
+    when: {class: crack}
+    items:
+      - {code: DRY-PATCH, description: "Patch and finish crack (tape, mud, sand)", qty: region_length_m, margin: 0.15}
+      - {code: PNT-WALL, description: "Paint wall (2 coats)", qty: wall_area_m2}
+  - id: S-HOLE
+    when: {class: hole}
+    items:
+      - {code: DRY-PATCH, description: "Patch hole in drywall", qty: region_area_m2, margin: 0.10}
+      - {code: PNT-WALL, description: "Paint wall (2 coats)", qty: wall_area_m2}

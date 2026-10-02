@@ -45,11 +45,41 @@ def run_lidar(path, cfg) -> tuple[dict, dict]:
     plan["rooms"] = res.rooms
     plan["adjacency"] = res.adjacency or []
     plan["property"] = {"footprint_area": res.footprint}
-    plan["warnings"] = res.warnings + [
-        "damage and scope are not implemented yet",
+    plan["warnings"] = []
+    _lidar_damage(plan, res, cap, path, cfg)
+    timing["damage"] = time.time() - t0
+    plan["warnings"] = res.warnings + plan["warnings"] + [
         "intervals are propagated, not yet calibrated against ground truth"]
     timing["total"] = time.time() - t0
     plan["capture"]["runtime_s"] = round(timing["total"], 1)
     plan["capture"]["timing_s"] = {k: round(v, 1) for k, v in timing.items()}
     res.debug["cloud"] = P
     return plan, res.debug
+
+
+def _lidar_damage(plan, res, cap, path, cfg) -> None:
+    """Per room: the RGB frames taken from inside it, LiDAR depth, drift-corrected poses -> damage regions."""
+    from pathlib import Path
+
+    from roomscan.damage.stage import finalize, room_damage, stray_rgb_frames, views_in_room
+    from roomscan.geometry import plan2d as p2
+
+    if cfg["damage"]["backend"] == "off":
+        finalize(plan, [])
+        return
+    theta, floor = res.debug["theta"], res.debug["levels"].floor
+    cam_uv = cap.poses[:, :3, 3][:, [0, 2]] @ p2.rot2(-theta).T
+    base = cap._cap if hasattr(cap, "_cap") else cap
+    k = min(8, cfg["damage"]["keyframes_per_room"])
+    picks = {r["id"]: views_in_room(r, cam_uv, k) for r in plan["rooms"]}
+    rgb = stray_rgb_frames(Path(path), [int(base.frame_ids[i]) for v in picks.values() for i in v])
+    regions = []
+    for room in plan["rooms"]:
+        idx = [i for i in picks[room["id"]] if int(base.frame_ids[i]) in rgb]
+        if not idx:
+            continue
+        regions += room_damage(room, [rgb[int(base.frame_ids[i])] for i in idx], np.stack([base.depth(i) for i in idx]),
+                               np.stack([base.K_depth] * len(idx)), cap.poses[idx], floor, theta, LIDAR_ERR, cfg,
+                               Path(cfg["runtime"]["cache_dir"]), plan["warnings"],
+                               [f"frame {int(base.frame_ids[i]):06d}" for i in idx])
+    finalize(plan, regions)

@@ -37,6 +37,8 @@ xcuserdata/
 .build/
 
 # Model-output checkpoints and extracted video frames (regenerable; can be large)
-cache/
+cache/*
+# ...except VLM responses: committed so damage results replay identically (brief: cached model outputs)
+!cache/vlm/
 # Other Claude sessions' worktrees
 .claude/worktrees/

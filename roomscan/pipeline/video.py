@@ -153,6 +153,8 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     from roomscan.pipeline.backend import meas
 
     plan["property"] = {"footprint_area": meas(total, float(np.sqrt(var)), "m2")}
+    dmg_warn = []
+    _video_damage(plan, res, keys, imgs, depths, K, cams, G, cfg, dmg_warn)
     coverage = len(reg) / len(names)
     plan["capture"] |= {"device": info.model or "unknown", "drift_correction": "off",
                         "runtime_s": round(time.time() - t0, 1),
@@ -164,7 +166,7 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
                                   "metric_scale_spread": round(scale_spread, 3), "sfm_s": round(t_sfm, 1),
                                   "sfm": {"fps": rc["video_fps"], "matcher": rc["video_matcher"],
                                           "overlap": rc["video_seq_overlap"]}}}
-    warns = list(res.warnings)
+    warns = list(res.warnings) + dmg_warn
     if coverage < 0.8:
         warns.append(f"camera tracking covered only {coverage:.0%} of the video ({len(sfm.pieces)} pieces); "
                      "rooms seen only in the untracked part are missing")
@@ -173,5 +175,29 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     if info.hdr:
         warns.append("HDR video: converted to standard range for processing (the protocol asks for HDR off)")
     plan["warnings"] = warns + ["video-tier intervals use a 4% scale term from proxy experiments; not yet calibrated",
-                                "openings, adjacency, damage and scope are not implemented yet"]
+                                "openings and adjacency are not implemented yet on the video tier"]
     return plan, {"backend": res.debug, "piece_scales": piece_scales, "join_log": join_log}
+
+
+def _video_damage(plan, res, keys, imgs, depths, K, cams, G, cfg, warnings) -> None:
+    """Per room: keyframes taken from inside it, their metric depth and gravity-aligned joined poses."""
+    from roomscan.damage.stage import finalize, room_damage, views_in_room
+    from roomscan.geometry import plan2d as p2
+
+    if cfg["damage"]["backend"] == "off" or not plan["rooms"]:
+        finalize(plan, [])
+        return
+    c2w = cams.copy()
+    c2w[:, :3, :3] = G @ cams[:, :3, :3]
+    c2w[:, :3, 3] = cams[:, :3, 3] @ G.T
+    theta, floor = res.debug["theta"], res.debug["levels"].floor
+    cam_uv = c2w[:, :3, 3][:, [0, 2]] @ p2.rot2(-theta).T
+    regions = []
+    for room in plan["rooms"]:
+        idx = views_in_room(room, cam_uv, min(8, cfg["damage"]["keyframes_per_room"]))
+        if not idx:
+            continue
+        regions += room_damage(room, [imgs[keys[i]] for i in idx], np.stack([depths[keys[i]] for i in idx]),
+                               np.stack([K] * len(idx)), c2w[idx], floor, theta, VIDEO_ERR, cfg,
+                               Path(cfg["runtime"]["cache_dir"]), warnings, [keys[i] for i in idx])
+    finalize(plan, regions)

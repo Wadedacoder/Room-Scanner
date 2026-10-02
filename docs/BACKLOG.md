@@ -36,8 +36,8 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 ## Contract items not started
 | # | Item | Serves | Status |
 |---|---|---|---|
-| 3.1 | Damage regions (VLM, cached) with class + metric extent | P2 | ⬜ |
-| 3.2 | Concealed-damage flags with fired rule; scope line items | P2 | ⬜ |
+| 3.1 | Damage regions (VLM, cached) with class + metric extent | P2 | ✅ code + smoke; real run blocked on API key + staged damage (user) |
+| 3.2 | Concealed-damage flags with fired rule; scope line items | P2 | ✅ |
 | 3.3 | Opening-width gate scorer; ceiling gate; repeatability table (`bench/gates.py`) | P2, D5 | 🟨 gates.py done; repeatability table ⬜; door widths ⏸ tape |
 
 ## Benchmark and deliverables

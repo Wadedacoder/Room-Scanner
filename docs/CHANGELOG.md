@@ -9,6 +9,19 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 ## [Unreleased]
 
 ### Added
+- **Damage chain (backlog 3.1–3.2), all three tiers.** Pluggable detector → projection onto room surfaces → rules →
+  scope. `roomscan/damage/detect_claude.py`: one Claude (`claude-opus-5-5`) vision request per room (≤ 8 views,
+  JSON-schema structured output: class + box per image on a 0–1000 grid), server-side fallback enabled
+  (`fallbacks="default"`), responses cached in `cache/vlm/<content hash>.json` and **committed** (gitignore exception)
+  so damage replays identically; `damage.cache` = replay | live | replay_or_live. `roomscan/damage/project.py`: box →
+  back-projected metric points → floor / ceiling / nearest wall, 5–95% extent in surface-local metres.
+  `roomscan/damage/stage.py`: views per room (photos: the room's own; LiDAR/video: frames whose camera is inside the
+  room outline), cross-view merge (same surface + class, IoU ≥ 0.2), intervals from tier error + one depth-pixel
+  footprint. `roomscan/scope/rules.yaml` + `engine.py`: 5 concealed-damage rules and 6 scope rules; every flag and line
+  item records its rule id; wall-wide items listed once per surface. With no credentials the run warns and ships
+  geometry with empty damage. Smoke (fake centre-box detector): photo study → 4 wall regions 0.45–1.1 m, schema-valid;
+  LiDAR c7d28f72c6 → 35 regions on walls/ceilings, flags and scope fire, schema-valid. Real detections need an
+  `ANTHROPIC_API_KEY` and staged-damage captures (blocked on the user).
 - `bench/gates.py`: scores a plan.json against the tape sheet with the brief's per-tier gates (walls paired by opposite
   sides, area, ceiling ≤ 1.5 cm, opening widths ≤ 2 cm on ≥ 85% counting missed and phantom openings, interval
   coverage). Study, photo tier: walls and area pass; ceiling fails (−2.0 cm, interval holds). Video after the fix
