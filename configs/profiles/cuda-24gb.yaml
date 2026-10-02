@@ -1,0 +1,13 @@
+description: "NVIDIA GPU, >=24 GB VRAM (RTX 3090/4090, A100)"
+runtime:
+  device: cuda
+  dtype: bfloat16
+recon:
+  model: da3-nested-giant-large
+  metric_model: da3-nested-giant-large
+  max_views: 6             # extrapolated from E1 (Nested 4 views = 12.0 GB on T4); verify on a 24 GB card
+  image_long_side: 518
+  video_keyframes: 200
+lidar:
+  frame_stride: 1
+  voxel_m: 0.01

@@ -1,0 +1,12 @@
+description: "NVIDIA GPU, 12-23 GB VRAM (e.g. Kaggle T4/P100, RTX 4080)"
+runtime:
+  device: cuda
+  dtype: float16
+recon:
+  model: da3-giant-1.1
+  max_views: 4             # E1 (T4): Giant 4 views = 10.7 GB, 6 views = OOM
+  image_long_side: 518
+  video_keyframes: 120
+lidar:
+  frame_stride: 1
+  voxel_m: 0.01

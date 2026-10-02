@@ -1,0 +1,11 @@
+description: "Apple silicon, 16-31 GB unified memory"
+runtime:
+  device: mps
+recon:
+  model: da3-large-1.1
+  max_views: 6             # E1: Large peaks 7.2 GB @6 views, 10.9 GB @8
+  image_long_side: 518
+  video_keyframes: 80
+lidar:
+  frame_stride: 2
+  voxel_m: 0.01

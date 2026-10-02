@@ -1,0 +1,11 @@
+description: "Apple silicon, >=32 GB unified memory"
+runtime:
+  device: mps
+recon:
+  model: da3-large-1.1
+  max_views: 8             # E1: Giant OOMs at 6 views on 16 GB; Large @8 = 10.9 GB
+  image_long_side: 518
+  video_keyframes: 120
+lidar:
+  frame_stride: 1
+  voxel_m: 0.01
