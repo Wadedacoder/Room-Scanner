@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import numpy as np
 from matplotlib.path import Path as MplPath
 
+from roomscan import __version__
 from roomscan.geometry import plan2d as p2
 from roomscan.geometry.cloud import find_levels
 
@@ -130,6 +131,6 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
 
 def empty_plan(tier: str, source: str) -> dict:
     return {"schema_version": "0.1",
-            "capture": {"tier": tier, "source": source, "pipeline_version": "0.2"},
+            "capture": {"tier": tier, "source": source, "pipeline_version": __version__},
             "rooms": [], "adjacency": [], "property": {}, "damage": [], "concealed_flags": [], "scope": [],
             "warnings": []}
