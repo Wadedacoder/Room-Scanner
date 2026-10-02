@@ -48,3 +48,7 @@ def test_digest_changes_with_config():
     a = load_config("lite", hw=M1_8).digest
     b = load_config("lite", overrides=["lidar.voxel_m=0.01"], hw=M1_8).digest
     assert a != b
+
+
+def test_drift_off_survives_yaml_boolean():
+    assert load_config("lite", overrides=["drift.method=off"], hw=M1_8)["drift"]["method"] == "off"

@@ -36,7 +36,7 @@ recon:                      # learned geometry for the photo and video tiers (se
   window_overlap: 2         # shared views between consecutive windows
 
 drift:
-  method: posegraph+planes  # off | posegraph | posegraph+planes   ("off" is for the ablation only)
+  method: posegraph         # off | posegraph   ("off" is for the ablation only)
 
 damage:
   backend: vlm              # vlm | off

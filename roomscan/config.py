@@ -115,8 +115,10 @@ def _validate(cfg: dict) -> None:
         raise ConfigError("recon.image_long_side must be a multiple of 14 (ViT patch size)")
     if cfg["runtime"]["device"] not in {"auto", "cpu", "mps", "cuda"}:
         raise ConfigError("runtime.device must be auto|cpu|mps|cuda")
-    if cfg["drift"]["method"] not in {"off", "posegraph", "posegraph+planes"}:
-        raise ConfigError("drift.method must be off|posegraph|posegraph+planes")
+    if cfg["drift"]["method"] is False:  # YAML 1.1 reads a bare `off` as boolean false
+        cfg["drift"]["method"] = "off"
+    if cfg["drift"]["method"] not in {"off", "posegraph"}:
+        raise ConfigError("drift.method must be off|posegraph")
     if cfg["damage"]["cache"] not in {"replay", "live", "replay_or_live"}:
         raise ConfigError("damage.cache must be replay|live|replay_or_live")
 

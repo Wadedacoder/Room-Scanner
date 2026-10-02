@@ -16,6 +16,13 @@ def run_lidar(path, cfg) -> tuple[dict, dict]:
     timing = {}
     lc = cfg["lidar"]
     cap = StrayCapture.open(path)
+    drift = None
+    if cfg["drift"]["method"] == "posegraph":
+        from roomscan.stitch.drift import CorrectedCapture, correct_drift
+
+        drift = correct_drift(cap)
+        cap = CorrectedCapture(cap, drift.corrections)
+        timing["drift"] = time.time() - t0
     P = fuse(cap, lc["frame_stride"], lc["min_confidence"], lc["max_depth_m"], lc["voxel_m"])
     timing["fuse"] = time.time() - t0
     cam = cap.poses[:, :3, 3]
@@ -26,7 +33,14 @@ def run_lidar(path, cfg) -> tuple[dict, dict]:
     timing["geometry"] = time.time() - t0
 
     plan = empty_plan("lidar", str(path))
-    plan["capture"]["drift_correction"] = "off"
+    plan["capture"]["drift_correction"] = cfg["drift"]["method"]
+    if drift is not None:
+        plan["capture"]["drift"] = {"fragments": len(drift.fragments), "revisits_matched": len(drift.loops),
+                                    "revisits_rejected": drift.rejected,
+                                    "max_shift_m": round(drift.max_shift_m, 3),
+                                    "max_yaw_deg": round(drift.max_yaw_deg, 2),
+                                    "revisit_misalignment_cm": [round(drift.residual_before_cm, 1),
+                                                                round(drift.residual_after_cm, 1)]}
     plan["rooms"] = res.rooms
     plan["property"] = {"footprint_area": res.footprint}
     plan["warnings"] = res.warnings + [
@@ -35,4 +49,5 @@ def run_lidar(path, cfg) -> tuple[dict, dict]:
     timing["total"] = time.time() - t0
     plan["capture"]["runtime_s"] = round(timing["total"], 1)
     plan["capture"]["timing_s"] = {k: round(v, 1) for k, v in timing.items()}
+    res.debug["cloud"] = P
     return plan, res.debug
