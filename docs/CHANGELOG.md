@@ -8,6 +8,8 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-03 · damage chain, honest video intervals, walk-in robustness · tag `v0.8.0`
+
 ### Fixed (robustness sweep, `bench/local/sweep.sh`: all 25 captures on disk)
 - **Photo tier crashed on any fresh multi-room capture** (MPS out of memory at room 2): the OWLv2 damage detector ran
   between rooms and its GPU cache starved the next room's DA3. house_b had only passed because its DA3 output was

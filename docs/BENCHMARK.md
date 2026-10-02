@@ -1,6 +1,6 @@
 # Benchmark report
 
-Pipeline 0.7.x on an M1 MacBook Air (8 GB, `lite` profile) unless noted. Every number below can be regenerated from
+Pipeline 0.8.0 on an M1 MacBook Air (8 GB, `lite` profile) unless noted. Every number below can be regenerated from
 the commands given; the experiment write-ups behind them are in `docs/EXPERIMENTS.md` (E-numbers).
 
 **What ground truth exists.** Tape is available for one room only so far: the study (walls 312.4 / 330.2 / 312.4 /

@@ -1,6 +1,6 @@
 # Room-Scanner: technical report
 
-Pipeline 0.7.x · M1 MacBook Air 8 GB (`lite` profile) · iPhone 14 Plus (no LiDAR) · 2026-10-03.
+Pipeline 0.8.0 · M1 MacBook Air 8 GB (`lite` profile) · iPhone 14 Plus (no LiDAR) · 2026-10-03.
 Companion documents: `docs/BENCHMARK.md` (numbers), `docs/EXPERIMENTS.md` (E1–E21, how each was found),
 `docs/CHANGELOG.md` (versioned history), `fixloop/` (declared fix), `docs/COMPLIANCE.md` (requirement → file).
 
@@ -101,8 +101,10 @@ damage (detector → surface projection) → rules.yaml → concealed flags + sc
   room dimensions, with intervals.
 
 ### 2.5 Uncertainty
-Each tier has an error model of absolute (m) + relative (scale) terms. LiDAR: 1 cm + 0. Video: 2 cm + 4%. Photos:
-3 cm + 5%, the relative terms from E1–E2 metric-scale spreads. A wall's sigma combines both fitted neighbouring wall
+Each tier has an error model of absolute (m) + relative (scale) terms. LiDAR: 1 cm + 0. Photos: 3 cm + 5%, from
+E1–E2 metric-scale spreads. Video: 2 cm + a **measured** scale term, √(4%² + per-piece scale standard error²), where
+each COLMAP piece's scale is a median of n keyframe depth ratios (E21). A fixed 4% was overconfident: the per-keyframe
+spread is 20–29%, giving 9.6% on the study video and 14.9% on the house walk. A wall's sigma combines both fitted neighbouring wall
 lines (corners are intersections) with the tier terms. Area and perimeter propagate from walls. Ceilings combine the
 top-layer spread, floor-level spread and tier terms. Intervals are ±1.645σ. **They are propagated, not yet
 calibrated:** one taped room gives 4–5 checks. Every interval checked so far contains the tape value, including the
@@ -115,6 +117,11 @@ photo ceiling that misses its gate by 0.5 cm.
   full-house run.
 * Layered config with unknown keys rejected; `config.resolved.yaml` with a digest is written next to every output.
 * A local website (`roomscan serve`) runs one guarded job at a time and compares results against typed-in tape.
+* A memory watchdog (`scripts/run_guarded.sh`) measures macOS `phys_footprint`, which includes GPU and swap. It used
+  to read RSS, which missed both: a video run thrashed 2.1 GB of swap unseen.
+* A robustness sweep runs every capture on disk (25: photo variants, LiDAR, videos). It found that any fresh
+  multi-room photo capture crashed at room 2, because the damage detector's GPU cache starved the next room's
+  reconstruction. That is fixed: damage now runs after all geometry. The sweep is 25/25.
 
 ## 3. Results (details: `docs/BENCHMARK.md`)
 
@@ -124,7 +131,9 @@ photo ceiling that misses its gate by 0.5 cm.
 | Video (study, off-protocol 1× walk) | walls −4.0% / −6.9%, area −10.8% (interval holds), no ceiling | ✗ (±3%) |
 | LiDAR | no taped LiDAR capture | n/a |
 
-* **Repeatability:** three live photo runs of the study are identical to 4 decimals.
+* **Repeatability:** three live runs each of the study photos and the study video are identical to 4 decimals.
+* **Whole-house video walk (E21):** 62% of frames tracked, 3 merged rooms instead of 6. Not usable, and reported as
+  such: the intervals are wide.
 * **LiDAR self-consistency:** 5 rooms with adjacency on the 215 s walk, drift 19.7 → 3.5 cm.
 * **Connected plans:** photos connect 3 of 6 house rooms (the three with a look-through photo); LiDAR connects 5/5.
 * **Runtime (live):** 15–28 s for one photo room, 136 s for the 6-room house (cross-room matching included), ~5 min for a 64 s video, 3.5 min for a
@@ -141,6 +150,11 @@ photo ceiling that misses its gate by 0.5 cm.
   most cases; one probably-false link remains and is marked unverified (E19).
 * **The first fix-loop implementation** joined COLMAP pieces in time order and dropped the largest piece (v1). The
   shipped version anchors on it. Both are kept on record.
+* **Registering more video frames** two ways: looser COLMAP thresholds (E22) and DISK+LightGlue matches inside
+  COLMAP (E23). Both registered far more frames (79%, 94%) and both made the room worse (−16% and +75% walls), because
+  the extra poses were wrong. Fewer correct poses beat more wrong ones.
+* **A damage query that names a surface** ("a cracked ceiling") boxed the clean ceiling. Negative queries for
+  undamaged things fixed it (E24).
 
 ## 5. Fix loop (`fixloop/`)
 Declared before any code change (commit `5baa29e`, tag `fixloop-before`). The worst gate was video short side −35.8%
@@ -168,7 +182,8 @@ Examples: no ceiling when the floor is implausible, unlinked rooms drawn apart, 
 * **Ground truth is thin:** one taped room. Tape for the other five rooms, door widths and second readings would
   allow interval calibration and opening-width scoring.
 * **LiDAR accuracy and the magicplan head-to-head** need a Pro iPhone for an hour.
-* **Damage accuracy** needs staged damage photographed with tape, plus an API key for the detector.
-* **Video:** register more of the walk (COLMAP with learned features, or DA3 poses throughout with COLMAP only as a
-  scale/loop anchor).
-* **Photos:** connect rooms without a look-through photo by matching door geometry on both sides.
+* **Damage recall** needs staged damage photographed with tape. The local detector needs no key (E24). Its 0 false
+  positives on 17 clean photos is in-sample.
+* **Video:** neither looser registration nor learned matches helped (E22, E23). Next would be DA3 poses throughout,
+  with COLMAP only as a scale and loop anchor, plus a protocol emphasis on slow turns.
+* **Photos:** rooms without a look-through photo stay unplaced. Door geometry alone was ambiguous on house_b (E25).
