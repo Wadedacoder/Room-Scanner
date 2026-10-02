@@ -24,6 +24,35 @@ def _load(profile: str, config: Optional[Path], overrides: Optional[list[str]]):
         raise typer.BadParameter(str(e)) from None
 
 
+def resolve_capture(path: Path, out: Path) -> Path:
+    """A zip (Stray Scanner shares one) is extracted under the output folder; a folder that only wraps one Stray scan
+    resolves to that scan. The original capture is never modified."""
+    if path.is_file() and path.suffix.lower() == ".zip":
+        import zipfile
+
+        dest = out / "_extracted" / path.stem
+        if not dest.exists():
+            with zipfile.ZipFile(path) as z:
+                z.extractall(dest)
+        path = dest
+        while True:  # a zipped folder usually wraps everything in one top-level folder
+            inner = [p for p in path.iterdir() if not p.name.startswith((".", "__MACOSX"))]
+            if len(inner) == 1 and inner[0].is_dir():
+                path = inner[0]
+            else:
+                break
+    if path.is_dir() and not (path / "odometry.csv").exists():
+        # fixed depth (glob follows symlinked folders; rglob does not)
+        scans = [p.parent for pat in ("*/odometry.csv", "*/*/odometry.csv") for p in path.glob(pat)
+                 if "__MACOSX" not in p.parts]
+        if len(scans) == 1:
+            return scans[0]
+        inner = [p for p in path.iterdir() if not p.name.startswith((".", "__MACOSX"))]
+        if len(inner) == 1 and inner[0].is_file() and inner[0].suffix.lower() in {".mov", ".mp4"}:
+            return inner[0]
+    return path
+
+
 def detect_tier(path: Path) -> str:
     if (path / "odometry.csv").exists() and (path / "depth").is_dir():
         return "lidar"
@@ -73,6 +102,7 @@ def run(
     set_: Optional[list[str]] = SetOpt,
 ):
     """Capture -> plan.json (schema/plan.schema.json) + plan.svg."""
+    capture = resolve_capture(capture, out)
     tier = detect_tier(capture) if tier == "auto" else tier
     cfg = _load(profile, config, set_)
     run_dir = out / capture.resolve().name

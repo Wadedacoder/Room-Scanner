@@ -16,7 +16,7 @@ Phone capture (photos, video or LiDAR) in, then a dimensioned, stitched floor pl
 .venv/bin/pytest -q
 ```
 
-Tier is auto-detected: a Stray Scanner folder means LiDAR, a `.MOV`/`.mp4` file means video, and a folder of per-room photo folders means photos.
+Tier is auto-detected: a Stray Scanner folder means LiDAR, a `.MOV`/`.mp4` file means video, and a folder of per-room photo folders means photos. A `.zip` of any of these works too (extracted under the output folder). Off-protocol captures (loose photos, more than 8 per room, re-saved photos without EXIF) run with warnings instead of failing.
 
 ## Test it yourself (local website)
 
