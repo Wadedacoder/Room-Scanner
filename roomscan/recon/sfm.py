@@ -38,18 +38,18 @@ class SfmResult:
 
 
 def run_sfm(frames_dir: Path, names: list[str], focal_guess: float, work: Path, matcher: str = "sequential",
-            overlap: int = 10) -> SfmResult:
+            overlap: int = 10, min_inliers: int = 30) -> SfmResult:
     work.mkdir(parents=True, exist_ok=True)
     from roomscan.recon import checkpoint as ck
 
     key = ck.key_for("sfm", meta={"names": names, "focal_guess": round(float(focal_guess), 3), "matcher": matcher,
-                                  "overlap": overlap}, files=[frames_dir / n for n in names])
+                                  "overlap": overlap, **({"min_inliers": min_inliers} if min_inliers != 30 else {})}, files=[frames_dir / n for n in names])
     done = work / f"sfm_{key}.json"
     if ck.enabled() and done.exists():  # checkpoint: same frames + settings already solved
         return _parse(json.loads(done.read_text()), len(names))
     out = work / "sfm.json"
     cmd = [sys.executable, "-m", "roomscan.recon.sfm", str(frames_dir), str(work), str(focal_guess), json.dumps(names),
-           matcher, str(overlap)]
+           matcher, str(overlap), str(min_inliers)]
     subprocess.run(cmd, check=True, capture_output=True, text=True)
     out.replace(done)
     return _parse(json.loads(done.read_text()), len(names))
@@ -67,7 +67,7 @@ def _parse(d: dict, n: int) -> SfmResult:
 
 
 def _child(frames_dir: str, work: str, focal_guess: str, names_json: str, matcher: str = "sequential",
-           overlap: str = "10") -> None:
+           overlap: str = "10", min_inliers: str = "30") -> None:
     import shutil
 
     import pycolmap
@@ -112,6 +112,11 @@ def _child(frames_dir: str, work: str, focal_guess: str, names_json: str, matche
         opts = pycolmap.IncrementalPipelineOptions()
         opts.random_seed = seed
         opts.num_threads = 1
+        if int(min_inliers) < 30:
+            # E22: register blurrier frames through turns (COLMAP defaults: 30 inliers, ratio 0.25, 15 matches)
+            opts.mapper.abs_pose_min_num_inliers = int(min_inliers)
+            opts.mapper.abs_pose_min_inlier_ratio = 0.15
+            opts.min_num_matches = 10
         for k, v in (("ba_refine_focal_length", True), ("ba_refine_principal_point", False),
                      ("ba_refine_extra_params", True)):
             if hasattr(opts, k):
@@ -157,4 +162,4 @@ def _child(frames_dir: str, work: str, focal_guess: str, names_json: str, matche
 
 
 if __name__ == "__main__":
-    _child(*sys.argv[1:7])
+    _child(*sys.argv[1:8])

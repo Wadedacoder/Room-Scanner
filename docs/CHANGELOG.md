@@ -33,6 +33,8 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   expected); a 212 s walk at 8 fps with best-of-4 single-threaded mapping is ~7 min per seed on the M1.
 
 ### Added
+- `recon.video_abs_pose_min_inliers` (default 30 = unchanged) and E22: looser COLMAP registration tracks more frames but
+  places them wrongly (study −16% at 20, no room at 15); default kept.
 - Video repeatability: `study_walk1.MOV`, 3 live runs (COLMAP rerun each time) identical to 4 decimals
   (`bench/results/repeat_study_walk1.json`).
 - Clean-machine README test (backlog 4.7): fresh clone + empty caches → LiDAR and 6-room photo plans + 38 tests

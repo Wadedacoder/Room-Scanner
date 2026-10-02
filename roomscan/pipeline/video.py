@@ -60,7 +60,8 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     names = extract_frames(path, frames_dir, rc["video_fps"], SFM_LONG_SIDE)
     w, h = Image.open(frames_dir / names[0]).size
     f_guess = (max(w, h) / 2) / np.tan(np.radians(FOV_1X_DEG / 2))
-    sfm = run_sfm(frames_dir, names, f_guess, work, rc["video_matcher"], rc["video_seq_overlap"])
+    sfm = run_sfm(frames_dir, names, f_guess, work, rc["video_matcher"], rc["video_seq_overlap"],
+                  rc["video_abs_pose_min_inliers"])
     t_sfm = time.time() - t0
     f_px = float(sfm.K[0, 0])
     fov = float(np.degrees(2 * np.arctan(max(w, h) / 2 / f_px)))

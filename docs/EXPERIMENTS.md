@@ -473,3 +473,23 @@ total) for consistency only. Runs: `runs/e21b/house_b_walk.MOV/` (pipeline 0.7.x
 
 **Next for video (not done):** register more of the walk (learned features such as DISK+LightGlue inside COLMAP, or a
 looser sequential matcher), and allow bridges longer than 80 frames when the gap is a doorway turn.
+
+## E22: Can COLMAP register more of a handheld walk? (2026-10-03) · negative result
+
+`bench/local/e22_video_registration.sh` on the taped study video (`study_walk1.MOV`, 272 frames). Knobs: sequential
+matching overlap and the registration threshold (`recon.video_abs_pose_min_inliers`; below 30 also lowers the inlier
+ratio 0.25 → 0.15 and min matches 15 → 10).
+
+| Overlap | Min inliers | Registered | Pieces | Per-keyframe scale spread | Lens (fov) | Study result |
+|---|---|---|---|---|---|---|
+| 10 | **30 (default)** | 175 | 95, 51, 24, 18, 12 (5 joined) | 20.4% | 58° | −4.0% / −6.9%, area −10.8% |
+| 20 | 30 | 175 | identical | 20.4% | 58° | identical |
+| 10 | 20 | 213 | 207, 22, 22, 2 | 47.8% | 91° | −16.1% / −7.2%, area −22.1%, ceiling −22.8 cm |
+| 10 / 20 | 15 | 215 | 215, 10, 5 | 40.6% | 63° | no room: outline could not close |
+
+* More overlap changes nothing: the breaks are not missing pairs but frames with too few good matches (blur in turns).
+* A lower threshold registers more frames (79% vs 64%) **but registers them wrongly**: the per-keyframe scale spread
+  doubles and the self-calibrated focal length drifts (58° → 91° at 20), so walls get worse or the room disappears.
+  Fewer, correct poses beat more, wrong ones.
+* Kept the default (30); the knob stays configurable. The remaining route for 2.5 is better features (DISK+LightGlue
+  matches into COLMAP) or a protocol fix (slower turns), not a looser threshold.
