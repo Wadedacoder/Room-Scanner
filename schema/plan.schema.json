@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Wadedacoder/Room-Scanner/schema/plan.schema.json",
+  "title": "RoomScan plan v0.1",
+  "description": "Output contract per capture. Every metric value is a Measurement carrying a calibrated interval. Plan coordinates: metres, gravity-aligned, +x east-ish, +y north-ish in the plan (2D), z up.",
+  "type": "object",
+  "required": ["schema_version", "capture", "rooms", "adjacency", "property", "damage", "scope"],
+  "$defs": {
+    "Measurement": {
+      "type": "object",
+      "required": ["value", "lo", "hi", "unit"],
+      "properties": {
+        "value": {"type": "number"},
+        "lo": {"type": "number"},
+        "hi": {"type": "number"},
+        "unit": {"enum": ["m", "m2", "m3", "count"]},
+        "coverage": {"type": "number", "description": "nominal interval coverage, e.g. 0.9", "default": 0.9}
+      }
+    },
+    "Point2": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+    "Wall": {
+      "type": "object",
+      "required": ["id", "start", "end", "length"],
+      "properties": {
+        "id": {"type": "string", "description": "surface id, e.g. r1.w3"},
+        "start": {"$ref": "#/$defs/Point2"},
+        "end": {"$ref": "#/$defs/Point2"},
+        "length": {"$ref": "#/$defs/Measurement"},
+        "height": {"$ref": "#/$defs/Measurement"}
+      }
+    },
+    "Opening": {
+      "type": "object",
+      "required": ["id", "wall_id", "type", "width"],
+      "properties": {
+        "id": {"type": "string"},
+        "wall_id": {"type": "string"},
+        "type": {"enum": ["door", "open_passage", "window"]},
+        "offset_along_wall": {"$ref": "#/$defs/Measurement"},
+        "width": {"$ref": "#/$defs/Measurement"},
+        "height": {"$ref": "#/$defs/Measurement"},
+        "sill_height": {"$ref": "#/$defs/Measurement"},
+        "connects_to": {"type": ["string", "null"], "description": "room id on the other side, null if exterior/unknown"},
+        "detection_confidence": {"type": "number"}
+      }
+    },
+    "Room": {
+      "type": "object",
+      "required": ["id", "polygon", "walls", "openings", "ceiling_height", "floor_area"],
+      "properties": {
+        "id": {"type": "string"},
+        "label": {"type": "string"},
+        "polygon": {"type": "array", "items": {"$ref": "#/$defs/Point2"}, "description": "inner footprint in property frame, CCW"},
+        "walls": {"type": "array", "items": {"$ref": "#/$defs/Wall"}},
+        "openings": {"type": "array", "items": {"$ref": "#/$defs/Opening"}},
+        "ceiling_height": {"$ref": "#/$defs/Measurement"},
+        "floor_area": {"$ref": "#/$defs/Measurement"},
+        "perimeter": {"$ref": "#/$defs/Measurement"}
+      }
+    },
+    "DamageRegion": {
+      "type": "object",
+      "required": ["id", "surface_id", "class", "area"],
+      "properties": {
+        "id": {"type": "string"},
+        "surface_id": {"type": "string", "description": "wall id, or <room>.floor / <room>.ceiling"},
+        "class": {"enum": ["water_stain", "mold", "crack", "hole", "peeling_paint", "fire_smoke", "other"]},
+        "polygon_on_surface": {"type": "array", "items": {"$ref": "#/$defs/Point2"}, "description": "metres in surface-local (u along, v up) coords"},
+        "area": {"$ref": "#/$defs/Measurement"},
+        "extent_w": {"$ref": "#/$defs/Measurement"},
+        "extent_h": {"$ref": "#/$defs/Measurement"},
+        "confidence": {"type": "number"},
+        "evidence_frames": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "ConcealedFlag": {
+      "type": "object",
+      "required": ["id", "surface_id", "rule_id", "rationale"],
+      "properties": {
+        "id": {"type": "string"},
+        "surface_id": {"type": "string"},
+        "rule_id": {"type": "string", "description": "id from roomscan/scope/rules.yaml that fired"},
+        "rationale": {"type": "string"},
+        "triggered_by": {"type": "array", "items": {"type": "string"}, "description": "damage region ids"}
+      }
+    },
+    "ScopeItem": {
+      "type": "object",
+      "required": ["id", "surface_id", "code", "description", "quantity"],
+      "properties": {
+        "id": {"type": "string"},
+        "surface_id": {"type": "string"},
+        "code": {"type": "string", "description": "Xactimate-style category/selector, e.g. DRY-RPL"},
+        "description": {"type": "string"},
+        "quantity": {"$ref": "#/$defs/Measurement"},
+        "source": {"type": "array", "items": {"type": "string"}, "description": "damage region / flag ids"}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "capture": {
+      "type": "object",
+      "required": ["tier", "source"],
+      "properties": {
+        "tier": {"enum": ["photos", "video", "lidar"]},
+        "source": {"type": "string"},
+        "device": {"type": "string"},
+        "pipeline_version": {"type": "string"},
+        "drift_correction": {"type": "string", "description": "method used, or 'off' (ablation only)"},
+        "runtime_s": {"type": "number"}
+      }
+    },
+    "rooms": {"type": "array", "items": {"$ref": "#/$defs/Room"}},
+    "adjacency": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["a", "b", "via"],
+        "properties": {"a": {"type": "string"}, "b": {"type": "string"}, "via": {"type": "string", "description": "opening id"}}
+      }
+    },
+    "property": {
+      "type": "object",
+      "required": ["footprint_area"],
+      "properties": {
+        "footprint_area": {"$ref": "#/$defs/Measurement"},
+        "outline": {"type": "array", "items": {"$ref": "#/$defs/Point2"}}
+      }
+    },
+    "damage": {"type": "array", "items": {"$ref": "#/$defs/DamageRegion"}},
+    "concealed_flags": {"type": "array", "items": {"$ref": "#/$defs/ConcealedFlag"}},
+    "scope": {"type": "array", "items": {"$ref": "#/$defs/ScopeItem"}},
+    "warnings": {"type": "array", "items": {"type": "string"}, "description": "e.g. mirror suspected, low light, scale from monocular prior"}
+  }
+}

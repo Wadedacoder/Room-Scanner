@@ -1,1 +1,41 @@
 # Room-Scanner
+
+Phone capture (photos, video or LiDAR) in, then a dimensioned, stitched floor plan out, with damage regions, scope line items and a calibrated interval on every measurement.
+
+* Plan: [docs/PLAN.md](docs/PLAN.md)
+* Capture protocol: [docs/CAPTURE_PROTOCOL.md](docs/CAPTURE_PROTOCOL.md)
+* Compliance matrix: [docs/COMPLIANCE.md](docs/COMPLIANCE.md)
+* Output schema: [schema/plan.schema.json](schema/plan.schema.json)
+
+## Quick start (macOS / Linux)
+
+```bash
+./scripts/setup.sh                                  # uv + Python 3.11 venv + package; prints detected hardware
+./scripts/fetch_data.sh                             # raw captures -> data/raw/
+.venv/bin/roomscan run <capture> -o out/            # one command per capture
+.venv/bin/pytest -q
+```
+
+Tier is auto-detected: a Stray Scanner folder means LiDAR, a `.MOV`/`.mp4` file means video, and a folder of per-room photo folders means photos.
+
+## Hardware profiles
+
+The pipeline picks a profile for the machine it runs on. Stronger machines get larger models, more views per pass and finer voxels.
+
+| Profile | Picked when | Photo/video model | Views/pass | LiDAR stride / voxel |
+|---|---|---|---|---|
+| `lite` | anything else (e.g. M1 8 GB, CPU-only) | DA3-Base + DA3Metric-Large | 4 | 4 / 2 cm |
+| `mac-16gb` | Apple silicon ≥ 16 GB | DA3-Large-1.1 | 6 | 2 / 1 cm |
+| `mac-32gb` | Apple silicon ≥ 32 GB | DA3-Large-1.1 | 8 | 1 / 1 cm |
+| `cuda-16gb` | NVIDIA 12–23 GB (Kaggle T4/P100) | DA3-Giant-1.1 (fp16) | 4 | 1 / 1 cm |
+| `cuda-24gb` | NVIDIA ≥ 24 GB | DA3-Nested-Giant-Large (bf16) | 6 | 1 / 1 cm |
+
+```bash
+roomscan hw                                   # detected hardware and the profile 'auto' picks
+roomscan config -p mac-16gb                   # print a fully resolved config
+roomscan run <capture> -p cuda-16gb -c my.yaml -s recon.max_views=24
+```
+
+Configs resolve in layers: `configs/default.yaml` < `configs/profiles/<p>.yaml` < `--config file` < `--set key=value`. A key that isn't in `default.yaml` is rejected, so a typo fails instead of being ignored. Every run writes `config.resolved.yaml`, including the hardware and a config digest, next to its output, so each reported number can be traced to the exact profile and models that produced it.
+
+Licences: DA3-Giant and Nested-Giant are CC BY-NC 4.0; all models in `lite` and `mac-16gb` are Apache-2.0 (see `roomscan/models.py`).
