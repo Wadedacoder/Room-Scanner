@@ -107,6 +107,14 @@ did not install `kornia`. Both were fixed (`b9e01b6`) before this run. The fresh
 areas as the development environment (study 10.71 m², kitchen 6.22 m², …). The photo run took 203 s here vs 48 s
 warm, because it shared the CPU with a COLMAP job and was the first model load.
 
+## 5c. Robustness sweep (walk-in readiness)
+
+`bench/local/sweep.sh` runs every capture on disk through the current pipeline. 2026-10-03: 22/25 completed at first;
+the 3 failures were two MPS out-of-memory crashes on fresh multi-room photo captures (a real walk-in risk, caused by
+the damage detector running between rooms; fixed) and one COLMAP child failure that did not reproduce. After the fix:
+**25/25 complete** (19 photo sets incl. mixed lens/orientation variants, 3 LiDAR scans, 3 videos), every plan
+schema-valid.
+
 ## 6. Damage, flags and scope
 
 The chain runs end to end on all tiers (detector → projection onto floor / ceiling / wall → rules → scope), validated

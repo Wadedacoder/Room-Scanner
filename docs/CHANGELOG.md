@@ -8,6 +8,15 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Fixed (robustness sweep, `bench/local/sweep.sh`: all 25 captures on disk)
+- **Photo tier crashed on any fresh multi-room capture** (MPS out of memory at room 2): the OWLv2 damage detector ran
+  between rooms and its GPU cache starved the next room's DA3. house_b had only passed because its DA3 output was
+  checkpointed. Damage now runs after all rooms' geometry, and OWLv2 frees each image's tensors. house_a /
+  house_a_portrait now complete (peak 4.4 / 4.0 GB).
+- A failed COLMAP child surfaced only as `CalledProcessError`; the error now carries the child's own message.
+  (house_IMG_4637.MOV failed once in the sweep and did not reproduce on rerun: 453 s, 1 merged room, warned.)
+- Sweep result after fixes: 25/25 captures complete (19 photo sets, 3 LiDAR, 3 videos).
+
 ### Decisions (user, 2026-10-03)
 - No further tape and no Pro iPhone: benchmark claims stay limited to the taped study; magicplan head-to-head and LiDAR
   accuracy are reported as not done. Home captures are not published: `fetch_data.sh` defaults to the case-study

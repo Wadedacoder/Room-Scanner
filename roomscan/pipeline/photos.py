@@ -46,7 +46,7 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
     warnings, debug = [], {}
     total_area, total_var = 0.0, 0.0
     frames, room_photos, per_room = {}, {}, {}
-    damage = []
+    damage, damage_inputs = [], []
     from roomscan.stitch.photo_graph import RoomFrame
 
     for name, photos in capture.items():
@@ -79,10 +79,16 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
                                  np.array(res.rooms[0]["polygon"]))
         room_photos[name] = [p.image for p in photos]
         per_room[name] = res.rooms[0]
-        # damage before the room is moved into the property frame: regions live in surface-local coordinates
-        damage += room_damage(res.rooms[0], [p.image for p in photos], rec.depth, rec.K, c2w_g,
-                              res.debug["levels"].floor, res.debug["theta"], PHOTO_ERR, cfg,
-                              Path(cfg["runtime"]["cache_dir"]), warnings, [p.path.name for p in photos])
+        # damage inputs kept for after the loop (sweep, 2026-10-03: running OWLv2 between rooms left its GPU cache
+        # behind and the next room's DA3 ran out of MPS memory; only one model on the GPU at a time)
+        damage_inputs.append((res.rooms[0], [p.image for p in photos], rec.depth, rec.K, c2w_g,
+                              res.debug["levels"].floor, res.debug["theta"], [p.path.name for p in photos]))
+
+    # damage before rooms move into the property frame: regions live in surface-local coordinates
+    for room, imgs, depth, K, c2w, floor_y, theta, names in damage_inputs:
+        damage += room_damage(room, imgs, depth, K, c2w, floor_y, theta, PHOTO_ERR, cfg,
+                              Path(cfg["runtime"]["cache_dir"]), warnings, names)
+    damage_inputs.clear()
 
     placed, edges, root_theta = {}, [], 0.0
     if cfg["recon"].get("photo_stitch", True) and len(frames) > 1:

@@ -47,7 +47,7 @@ def _nms(boxes: np.ndarray, scores: np.ndarray, iou: float = 0.4) -> list[int]:
         x1 = np.minimum(boxes[i, 2], boxes[order[1:], 2])
         y1 = np.minimum(boxes[i, 3], boxes[order[1:], 3])
         inter = np.clip(x1 - x0, 0, None) * np.clip(y1 - y0, 0, None)
-        area = lambda b: (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])  # noqa: E731
+        area = lambda b: (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
         u = area(boxes[[i]]) + area(boxes[order[1:]]) - inter
         order = order[1:][inter / np.maximum(u, 1e-9) < iou]
     return keep
@@ -92,6 +92,7 @@ def detect_room(images: list[np.ndarray], cfg, cache_root: Path) -> tuple[list[d
             b = res["boxes"].cpu().numpy()
             sc = res["scores"].cpu().numpy()
             lb = res["labels"].cpu().numpy()
+            del inputs, out, res  # this image's device tensors (sweep: leftovers starved the next DA3 run)
             if not len(b):
                 continue
             w, hh = pil.size
@@ -108,7 +109,10 @@ def detect_room(images: list[np.ndarray], cfg, cache_root: Path) -> tuple[list[d
                 dets.append({"image": k, "class": cls_of[int(lb[i])], "x0": int(1000 * x0 / w), "y0": int(1000 * y0 / hh),
                              "x1": int(1000 * x1 / w), "y1": int(1000 * y1 / hh), "confidence": round(float(sc[i]), 4),
                              "note": texts[int(lb[i])]})
-    del model
+    del model, proc
+    import gc
+
+    gc.collect()
     if dev == "mps":
         torch.mps.empty_cache()
     path.parent.mkdir(parents=True, exist_ok=True)

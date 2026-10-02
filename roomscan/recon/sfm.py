@@ -52,7 +52,10 @@ def run_sfm(frames_dir: Path, names: list[str], focal_guess: float, work: Path, 
     out = work / "sfm.json"
     cmd = [sys.executable, "-m", "roomscan.recon.sfm", str(frames_dir), str(work), str(focal_guess), json.dumps(names),
            matcher, str(overlap), str(min_inliers), str(learned_matches or "")]
-    subprocess.run(cmd, check=True, capture_output=True, text=True)
+    r = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if r.returncode != 0:  # surface the child's own error (sweep, 2026-10-03: a bare CalledProcessError hid the cause)
+        tail = (r.stderr or r.stdout or "").strip().splitlines()[-6:]
+        raise RuntimeError(f"COLMAP step failed (exit {r.returncode}): " + " | ".join(tail))
     out.replace(done)
     return _parse(json.loads(done.read_text()), len(names))
 
