@@ -10,7 +10,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 |---|---|---|---|
 | 0.1 | Photo wall sizes: diagnose untaped rooms; fix once tape for living/kitchen/bedroom/bathroom/store exists | P2 gates | 🟨 study ±2%; ⏸ tape for other rooms |
 | 0.2 | Door/opening detection on photo rooms (works on LiDAR) | P2 openings, stitch | 🟨 |
-| 0.3 | Full-house photo run hangs (each room alone 10–13 s) | walk-in | ⬜ |
+| 0.3 | Full-house photo run hangs (each room alone 10–13 s) | walk-in | ✅ not reproduced after offline-first loading (47.7 s) |
 | 0.4 | Place rooms from strong cross-room visual links (DISK+LightGlue + PnP) | P2 photo stitch | ⬜ |
 | 0.5 | Door-geometry matching for rooms without a visual link; adjacency; overlap check | P2 photo stitch | ⬜ |
 | 0.6 | Connected plan in plan.json (`adjacency`, global polygons) + SVG for photo, video, LiDAR | P2 | ⬜ |
@@ -19,11 +19,11 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 ## Robustness and reproducibility
 | # | Item | Serves | Status |
 |---|---|---|---|
-| 1.1 | Checkpoint model outputs (DA3 recon, COLMAP) by input hash: resume after crash, deterministic replay | D4, walk-in | ⬜ |
+| 1.1 | Checkpoint model outputs (DA3 recon, COLMAP) by input hash: resume after crash, deterministic replay | D4, walk-in | ✅ |
 | 1.2 | Offline-first model loading; weights fetched by script | D4, constraints | 🟨 loading done; setup_models fetches weights ⬜ |
-| 1.3 | Health check every 30 min (tests, website, memory, stuck jobs, git) | process | ⬜ |
+| 1.3 | Health check every 30 min (tests, website, memory, stuck jobs, git) | process | ✅ session watch at :13/:43 |
 | 1.4 | Video tracking repeatable (seeded, single-threaded) + best-of-seeds; commit | P2 repeatability | 🟨 uncommitted |
-| 1.5 | `cache/` and stale worktree hygiene (.gitignore, other session's branch) | process | ⬜ |
+| 1.5 | `cache/` and stale worktree hygiene (.gitignore, other session's branch) | process | ✅ ignored; branch left untouched |
 
 ## Tiers
 | # | Item | Serves | Status |

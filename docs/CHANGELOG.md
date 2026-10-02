@@ -27,7 +27,15 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 - Models load from the local copy first (`load_pretrained`); a Hugging Face disconnect mid-run killed a photo job
   although every weight was cached.
 
+- **Checkpoints for model outputs** (`roomscan/recon/checkpoint.py`): DA3 room reconstructions and COLMAP video
+  solves are stored under a hash of inputs + settings + step version, written atomically. Reruns and resumed runs reuse
+  finished steps; identical inputs replay identically; `ROOMSCAN_NO_CACHE=1` forces the live path.
+  Checked: study cold 16.4 s → cached 4.1 s, identical result; 3 tests (key sensitivity, round trip, truncated file).
+
 ### Fixed
+- Full-house photo run "hang" (15+ min at ~36% CPU while each room alone took 10–13 s): not reproduced since models
+  load offline-first; whole house_b now 47.7 s. Probable cause: a stalled Hugging Face request on a model load.
+  The health watch flags any job running > 20 min.
 - COLMAP child cleans SQLite's -wal/-shm files left by an interrupted run ("No registered database factory").
 
 ### Added

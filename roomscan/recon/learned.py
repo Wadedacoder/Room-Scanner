@@ -43,6 +43,8 @@ class LearnedRecon:
         self.repos = (models.get(rc["model"]).hf_repo, models.get(rc["metric_model"]).hf_repo)
         self.win, self.overlap, self.res = rc["max_views"], rc["window_overlap"], rc["image_long_side"]
         self.torch = torch
+        self.cache_dir = cfg["runtime"]["cache_dir"]
+        self.last_cache_hit = False
 
     def _load(self, repo):
         from roomscan.recon.da3_loader import load_pretrained
@@ -66,6 +68,22 @@ class LearnedRecon:
             return model.inference(imgs, process_res=self.res)
 
     def reconstruct(self, images: list[np.ndarray], K_full: np.ndarray) -> Recon:
+        """Checkpointed: same images + intrinsics + models + window settings -> cached result (roomscan.recon.checkpoint)."""
+        from roomscan.recon import checkpoint as ck
+
+        key = ck.key_for("da3_recon", list(images) + [K_full],
+                         {"models": self.repos, "win": self.win, "overlap": self.overlap, "res": self.res})
+        path = ck.path_for(self.cache_dir, "da3_recon", key)
+        hit = ck.load_npz(path)
+        self.last_cache_hit = hit is not None
+        if hit is not None:
+            return Recon(hit["c2w"], hit["depth"], hit["conf"], hit["K"], float(hit["scale"]), float(hit["fperr"]))
+        rec = self._reconstruct_live(images, K_full)
+        ck.save_npz(path, c2w=rec.c2w, depth=rec.depth, conf=rec.conf, K=rec.K, scale=rec.scale,
+                    fperr=rec.focal_pred_err)
+        return rec
+
+    def _reconstruct_live(self, images: list[np.ndarray], K_full: np.ndarray) -> Recon:
         n = len(images)
         overlap = min(self.overlap, self.win - 1)
         images, K_full, valid_px = letterbox_to_common_shape(images, K_full)

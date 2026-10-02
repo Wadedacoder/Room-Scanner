@@ -32,11 +32,22 @@ class SfmResult:
 def run_sfm(frames_dir: Path, names: list[str], focal_guess: float, work: Path, matcher: str = "sequential",
             overlap: int = 10) -> SfmResult:
     work.mkdir(parents=True, exist_ok=True)
+    from roomscan.recon import checkpoint as ck
+
+    key = ck.key_for("sfm", meta={"names": names, "focal_guess": round(float(focal_guess), 3), "matcher": matcher,
+                                  "overlap": overlap}, files=[frames_dir / n for n in names])
+    done = work / f"sfm_{key}.json"
+    if ck.enabled() and done.exists():  # checkpoint: same frames + settings already solved
+        d = json.loads(done.read_text())
+        return SfmResult({k: np.array(v) for k, v in d["c2w"].items()}, np.array(d["points"]).reshape(-1, 3),
+                         {k: (np.array(v[0]).reshape(-1, 2), np.array(v[1], int)) for k, v in d["obs"].items()},
+                         np.array(d["K"]), d["pieces"], len(names))
     out = work / "sfm.json"
     cmd = [sys.executable, "-m", "roomscan.recon.sfm", str(frames_dir), str(work), str(focal_guess), json.dumps(names),
            matcher, str(overlap)]
     subprocess.run(cmd, check=True, capture_output=True, text=True)
-    d = json.loads(out.read_text())
+    out.replace(done)
+    d = json.loads(done.read_text())
     return SfmResult({k: np.array(v) for k, v in d["c2w"].items()}, np.array(d["points"]).reshape(-1, 3),
                      {k: (np.array(v[0]).reshape(-1, 2), np.array(v[1], int)) for k, v in d["obs"].items()},
                      np.array(d["K"]), d["pieces"], len(names))
