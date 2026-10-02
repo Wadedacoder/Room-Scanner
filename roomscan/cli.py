@@ -123,6 +123,12 @@ def run(
         raise typer.Exit(f"pipeline for tier '{tier}' not implemented yet")
     plan, _ = run_tier(capture, cfg)
     plan["capture"]["config_digest"] = cfg.digest
+    if not plan["rooms"]:  # say why the plan is empty instead of returning a silent blank
+        hint = {"photos": "take the protocol's ring of 8 overlapping 0.5x photos per room",
+                "video": "walk the whole room slowly (30-45 s per room, 0.5x lens)",
+                "lidar": "scan the full perimeter of each room"}.get(tier, "")
+        plan["warnings"].insert(0, f"no room could be measured from this capture: too little of any room's walls was "
+                                   f"seen. {hint}")
     from roomscan.paths import data_dir
 
     schema = json.loads((data_dir("schema") / "plan.schema.json").read_text())
