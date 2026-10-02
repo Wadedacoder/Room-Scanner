@@ -168,3 +168,19 @@ Code at `5e8be9f`, `lite` profile, M1.
 * **No ceiling height** on any photo run.
 * 0.5× sets are the most consistent (−11 to −19% on walls), the same under-measurement as E6. 1× sets swing ±50%+.
 * None of these sets follows the protocol (8 landscape 0.5×); a compliant study capture is still needed.
+
+## E9: Multi-room photo set: study + bedroom + living (2026-10-02)
+
+`data/raw/photos/house_a_portrait` (study 4 × 0.5×; bedroom 6 and living 7, mixed 0.5×/1×, all portrait), code at
+`308b218`, `lite`, M1, 221 s. `house_a` (bedroom includes one landscape photo) crashes with the E8 orientation error,
+so one sideways photo loses the whole property.
+
+| Room | Output | Tape |
+|---|---|---|
+| study | 3.04 × 2.56 m, 7.8 m² | ≈ 3.40 × 3.12 m, 10.6 m² (−11% / −18%; identical to the single-room E8 run) |
+| bedroom | 3.58 × 2.58 m, 9.3 m² | not measured |
+| living | 10-wall outline incl. 0.01 m and 0.32 m walls, 38.8 m² | not measured |
+
+* **Photo-tier stitch gate fails outright:** no doorway matching, so rooms are laid side by side and adjacency is empty
+  (truth: study, bedroom and kitchen each open onto living). Openings, ceiling heights and damage are also absent.
+* Living's outline has sliver walls: the outline needs a minimum wall length / simplification step.
