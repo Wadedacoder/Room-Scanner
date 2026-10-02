@@ -8,6 +8,18 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-02 · model memory release fixed; first protocol photos scored · tag `v0.5.1`
+
+### Fixed
+- One model at a time actually works now. 0.3.1 deleted only the helper's own reference; the caller and the windowing
+  closure kept the geometry model alive while the metric model loaded, so `house_a_portrait` ran out of the 3.2 GB GPU
+  cap. Checked: 6-room `house_b` runs at a 3.0 GB peak.
+
+### Measured (E11)
+- First protocol-style photos (landscape 0.5×): study area +2.1%, sides +2.9% / +6.5% (inside the ±8% gate).
+- Known issue: study ceiling 2.10 m vs 2.743 m with an interval that excludes the truth (confident garbage).
+- Known issue: rooms from separate folders are not connected into one plan.
+
 ## [0.5.0] - 2026-10-02 · video tier v1 · tag `v0.5.0`
 
 ### Added

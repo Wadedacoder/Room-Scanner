@@ -47,8 +47,10 @@ class LearnedRecon:
     def _load(self, repo):
         return self.DA3.from_pretrained(repo).to(self.device).eval()
 
-    def _free(self, model):
-        del model
+    def _release(self):
+        """Return freed tensors to the OS. The CALLER must drop every reference to the model first (including closures):
+        0.3.1 deleted only this function's own reference, so the geometry model stayed resident next to the metric
+        model and a 6-photo room ran out of the 3.2 GB cap (E11)."""
         import gc
 
         gc.collect()
@@ -64,31 +66,74 @@ class LearnedRecon:
     def reconstruct(self, images: list[np.ndarray], K_full: np.ndarray) -> Recon:
         n = len(images)
         overlap = min(self.overlap, self.win - 1)
+        images, K_full, valid_px = letterbox_to_common_shape(images, K_full)
 
-        model = self._load(self.repos[0])
+        holder = {"m": self._load(self.repos[0])}
 
         def predict(idx):
-            p = self._infer(model, [images[i] for i in idx])
+            p = self._infer(holder["m"], [images[i] for i in idx])
             E = np.tile(np.eye(4), (len(idx), 1, 1))
             E[:, :3, :4] = p.extrinsics
             return WindowPrediction(np.linalg.inv(E), p.depth, p.conf, p.intrinsics)
 
         st = run_windowed(n, self.win, overlap, predict)
-        self._free(model)
+        holder.clear()  # drops the geometry model everywhere (the closure only sees the dict)
+        self._release()
         h, w = st.depth.shape[1:]
         sx = w / images[0].shape[1]
         K = K_full.copy()
         K[:, :2] *= sx
-        metric_model = self._load(self.repos[1])
+        holder["m"] = self._load(self.repos[1])
         # DA3Metric is monocular: one image per call gives identical depth with a fraction of the activation memory
-        raw = np.concatenate([self._infer(metric_model, [images[i]]).depth for i in range(n)])
-        self._free(metric_model)
+        raw = np.concatenate([self._infer(holder["m"], [images[i]]).depth for i in range(n)])
+        holder.clear()
+        self._release()
+        # padding added by the letterbox is not scene: drop its depth
+        vmask = np.stack([_resize_mask(m, (h, w)) for m in valid_px])
+        depth = np.where(vmask, st.depth, 0.0)
         metric = raw * K[:, 0, 0][:, None, None] / 300.0  # DA3Metric convention: depth = focal * out / 300
-        valid = (st.depth > 1e-4) & np.isfinite(metric) & (st.conf >= np.percentile(st.conf, 30))
-        k = float(np.median(metric[valid] / st.depth[valid]))
+        valid = vmask & (depth > 1e-4) & np.isfinite(metric) & (st.conf >= np.percentile(st.conf, 30))
+        k = float(np.median(metric[valid] / depth[valid]))
         c2w = st.c2w.copy()
         c2w[:, :3, 3] *= k
-        return Recon(c2w, st.depth * k, st.conf, K, k, float(np.mean(st.intrinsics[:, 0, 0] / K[:, 0, 0] - 1)))
+        return Recon(c2w, depth * k, st.conf, K, k, float(np.mean(st.intrinsics[:, 0, 0] / K[:, 0, 0] - 1)))
+
+
+def _resize_mask(m: np.ndarray, hw: tuple[int, int]) -> np.ndarray:
+    import cv2
+
+    return cv2.resize(m.astype(np.uint8), (hw[1], hw[0]), interpolation=cv2.INTER_NEAREST).astype(bool)
+
+
+def letterbox_to_common_shape(images: list[np.ndarray], K: np.ndarray):
+    """Make every view the majority shape. A multi-view model needs one shape per window; a lone landscape photo in a
+    portrait set crashed the run (E8, E11). Minority views are scaled to fit and centred on a black canvas, so they stay
+    upright (gravity uses the image axes); K follows the scale and offset; the returned masks mark real pixels."""
+    shapes = [im.shape[:2] for im in images]
+    target = max(set(shapes), key=shapes.count)
+    out, Ks, masks = [], K.copy(), []
+    for i, im in enumerate(images):
+        h, w = im.shape[:2]
+        if (h, w) == target:
+            out.append(im)
+            masks.append(np.ones((h, w), bool))
+            continue
+        import cv2
+
+        th, tw = target
+        s = min(th / h, tw / w)
+        nh, nw = round(h * s), round(w * s)
+        y0, x0 = (th - nh) // 2, (tw - nw) // 2
+        canvas = np.zeros((th, tw, 3), im.dtype)
+        canvas[y0:y0 + nh, x0:x0 + nw] = cv2.resize(im, (nw, nh), interpolation=cv2.INTER_AREA)
+        m = np.zeros((th, tw), bool)
+        m[y0:y0 + nh, x0:x0 + nw] = True
+        Ks[i, :2] *= s
+        Ks[i, 0, 2] += x0
+        Ks[i, 1, 2] += y0
+        out.append(canvas)
+        masks.append(m)
+    return out, Ks, masks
 
 
 def backproject(rec: Recon, conf_pct: float = 30, max_depth: float = 8.0, stride: int = 2):

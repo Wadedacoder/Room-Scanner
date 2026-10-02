@@ -223,3 +223,27 @@ peak 2.1 GB, 81 s total (COLMAP 51 s). Scored with `bench/score_study.py`.
 * COLMAP's refined focal gives a 57° field of view: the video was shot at **1×**, confirming the capture audit (E9).
 * The area is close only because the two side errors cancel; the room shape is wrong and the ±3% video gate fails.
 * Two thirds of the video is untracked: the largest piece has 92 frames and the next 84. Joining pieces is next.
+
+## E11: First protocol-style photos (house_b: 19 × landscape 0.5×, 6 rooms) (2026-10-02)
+
+`bench/datasets/house_b.yaml`; pipeline 0.5.1 (model-release fix), lite profile, 64 s, peak 3.0 GB under the watchdog.
+Only the study has tape. Rooms are NOT connected: each folder is reconstructed alone and drawn side by side.
+
+| Room | Photos | Area m² (90%) | Ceiling |
+|---|---|---|---|
+| study | 4 | 11.16 (8.03–14.30) | 2.10 m (1.91–2.28) |
+| living | 3 | 12.91 | not observed |
+| bedroom | 2 | 8.90 (3.07 × 2.90 m) | not observed |
+| kitchen | 3 | 6.22 | 2.67 m |
+| bathroom | 2 | 3.84 | not observed |
+| store | 3 | 3.43 | not observed |
+
+**Study vs tape:** short side 3.215 m vs 3.124 (+2.9%), long side 3.718 m vs 3.30–3.51 (+6.5%), area 11.16 vs
+10.3–10.95 m² (+2.1%, interval holds the truth). Inside the ±8% photo gate. The off-protocol study photos (E8) ranged
+−90% … +54%: following the protocol is worth more than any model change so far.
+
+**Ceiling: confident garbage.** 2.10 m against 2.743 m by tape, and the 90% interval (1.91–2.28 m) excludes the truth.
+Something else at about 2.1 m passed the ceiling test; to fix before anything is reported as calibrated.
+
+Also fixed here: 0.3.1's "one model at a time" didn't work (the caller and a closure still held the geometry model),
+which made `house_a_portrait` run out of the 3.2 GB GPU cap.
