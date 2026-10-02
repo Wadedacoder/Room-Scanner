@@ -85,6 +85,8 @@ def run(
         from roomscan.pipeline.lidar import run_lidar as run_tier
     elif tier == "photos":
         from roomscan.pipeline.photos import run_photos as run_tier
+    elif tier == "video":
+        from roomscan.pipeline.video import run_video as run_tier
     else:
         raise typer.Exit(f"pipeline for tier '{tier}' not implemented yet")
     plan, _ = run_tier(capture, cfg)

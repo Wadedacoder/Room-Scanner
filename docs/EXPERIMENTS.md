@@ -210,3 +210,16 @@ on the two closed walks; all of this data tests robustness, not protocol accurac
 Protocol changes made from this audit (0.4.1): HDR video off; one floor per capture (the flat has stairs); a check that
 0.5× is still selected for video (the file does not record the lens); a concrete LiDAR pace (one step every two
 seconds, a quarter turn in at least 2 s) and an explicit ceiling tilt per room.
+
+## E10: Video tier on the real study video (2026-10-02)
+
+`roomscan run study_walk1.MOV` (iPhone 14 Plus, 34 s, HDR, lens not recorded). Pipeline 0.5.0, lite profile, watchdog
+peak 2.1 GB, 81 s total (COLMAP 51 s). Scored with `bench/score_study.py`.
+
+| Variant | Frames tracked | Pieces | Short side | Long side | Area | Area interval holds tape |
+|---|---|---|---|---|---|---|
+| v1: sequential matching, 8 fps, largest piece | 92/272 (34%) | 92, 84, 18, 12, 4 | 2.73 m (−12.6%) | 3.80 m (+8.9%) | 9.97 m² (−3.4%) | yes (±22%) |
+
+* COLMAP's refined focal gives a 57° field of view: the video was shot at **1×**, confirming the capture audit (E9).
+* The area is close only because the two side errors cancel; the room shape is wrong and the ±3% video gate fails.
+* Two thirds of the video is untracked: the largest piece has 92 frames and the next 84. Joining pieces is next.

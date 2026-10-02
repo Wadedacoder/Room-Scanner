@@ -8,6 +8,19 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-02 · video tier v1 · tag `v0.5.0`
+
+### Added
+- **Video tier end to end** (`roomscan run walk.MOV`): upright frames via ffmpeg (HDR squeezed to SDR), COLMAP
+  sequential SfM in a child process with the focal length refined (videos don't record it), metric scale from
+  DA3Metric depth at COLMAP's sparse points, dense cloud from keyframe metric depth, shared back-end.
+  - Reports tracking coverage, the estimated lens (from the refined focal) and HDR as warnings.
+  - Checked (E10): study video → 9.97 m² (−3.4%) but short side −12.6%, long side +8.9%; only 34% of frames tracked.
+- The local website accepts videos now (same command underneath).
+
+### Known issues
+- Only COLMAP's largest piece is used; fast turns split the walk (E4/E5). Joining pieces is next.
+
 ## [0.4.1] - 2026-10-02 · capture protocol fixes from the capture audit · tag `v0.4.1`
 
 ### Changed
