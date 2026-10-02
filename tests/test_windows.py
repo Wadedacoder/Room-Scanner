@@ -40,3 +40,17 @@ def test_windowed_recovers_global_frame(n, size, overlap):
     aligned = apply_sim3(out.c2w, s, R, t)
     assert np.allclose(aligned, gt, atol=1e-6)
     assert np.allclose(out.depth * s, depth, rtol=1e-5)
+
+
+def test_letterbox_keeps_rays():
+    from roomscan.recon.learned import letterbox_to_common_shape
+
+    portrait = np.zeros((40, 30, 3), np.uint8)
+    land = np.zeros((30, 40, 3), np.uint8)
+    K = np.tile(np.array([[50.0, 0, 15], [0, 50.0, 20], [0, 0, 1]]), (3, 1, 1))
+    K[2] = [[50.0, 0, 20], [0, 50.0, 15], [0, 0, 1]]
+    imgs, K2, masks = letterbox_to_common_shape([portrait, portrait, land], K)
+    assert all(im.shape == portrait.shape for im in imgs)
+    # the landscape view's principal point must land on its own image centre inside the canvas
+    ys, xs = np.nonzero(masks[2])
+    assert abs(K2[2, 0, 2] - (xs.min() + xs.max() + 1) / 2) < 1 and abs(K2[2, 1, 2] - (ys.min() + ys.max() + 1) / 2) < 1

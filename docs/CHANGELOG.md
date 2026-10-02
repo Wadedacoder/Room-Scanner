@@ -15,6 +15,13 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   closure kept the geometry model alive while the metric model loaded, so `house_a_portrait` ran out of the 3.2 GB GPU
   cap. Checked: 6-room `house_b` runs at a 3.0 GB peak.
 
+### Added (shipped in this tag without being listed at the time; noted afterwards)
+- Mixed portrait/landscape photos in one room folder: minority-orientation views are scaled into a canvas of the
+  majority shape (kept upright), intrinsics adjusted, padding masked out of the depth (`letterbox_to_common_shape`).
+  This edit landed in the working tree from a command the user had rejected, and went into the 0.5.1 commit.
+  Unit-tested (principal point lands on the image centre); NOT yet run on a real mixed set (`house_a`). No effect
+  on E11: every house_b photo is landscape.
+
 ### Measured (E11)
 - First protocol-style photos (landscape 0.5×): study area +2.1%, sides +2.9% / +6.5% (inside the ±8% gate).
 - Known issue: study ceiling 2.10 m vs 2.743 m with an interval that excludes the truth (confident garbage).
