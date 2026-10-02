@@ -1,0 +1,13 @@
+{
+  "id": "devmsjsj/roomscan-model-eval-v2",
+  "title": "roomscan-model-eval-v2",
+  "code_file": "run.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["devmsjsj/roomscan-eval-bundle", "devmsjsj/roomscan-code"],
+  "competition_sources": [],
+  "kernel_sources": []
+}
