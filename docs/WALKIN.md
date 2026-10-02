@@ -24,7 +24,7 @@ intervals and warnings (E26).
 | Capture | Looks like | Live runtime on the M1 | Peak memory |
 |---|---|---|---|
 | Photos | folder of room folders (or loose photos = one room, or a .zip) | ~15–30 s per room; 6-room house 109 s | ≤ 4.4 GB |
-| Video | one `.MOV` / `.mp4` | ~5–6 min for a 1-min walk; long walks (3+ min) can take 30–60 min | ≤ 3.4 GB |
+| Video | one `.MOV` / `.mp4` | ~5–6 min for a 1-min walk; a 3.5-min whole-house walk took ~65 min (COLMAP 50 min) | ≤ 3.4 GB |
 | LiDAR | Stray Scanner folder or its .zip | ~30 s (short) to ~5 min (3.5-min walk with drift correction) | ≤ 1.3 GB |
 
 Or open the website: `.venv/bin/roomscan serve` → http://localhost:8765, drop the capture, read the result.
