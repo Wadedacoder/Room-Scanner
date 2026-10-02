@@ -101,14 +101,16 @@ damage (detector → surface projection) → rules.yaml → concealed flags + sc
   room dimensions, with intervals.
 
 ### 2.5 Uncertainty
-Each tier has an error model of absolute (m) + relative (scale) terms. LiDAR: 1 cm + 0. Photos: 3 cm + 5%, from
-E1–E2 metric-scale spreads. Video: 2 cm + a **measured** scale term, √(4%² + per-piece scale standard error²), where
+Each tier has an error model of absolute (m) + relative (scale) terms. LiDAR: 1 cm + 0. Photos: 3 cm + 5% for a
+protocol capture, 15% for an off-protocol room (1× lens, portrait, < 4 photos), 25% without an EXIF focal length (E26:
+on 10 captures of the taped study, off-protocol sets were 9–21% off while claiming ±9%). Video: 2 cm + a **measured** scale term, √(4%² + per-piece scale standard error²), where
 each COLMAP piece's scale is a median of n keyframe depth ratios (E21). A fixed 4% was overconfident: the per-keyframe
 spread is 20–29%, giving 9.6% on the study video and 14.9% on the house walk. A wall's sigma combines both fitted neighbouring wall
-lines (corners are intersections) with the tier terms. Area and perimeter propagate from walls. Ceilings combine the
-top-layer spread, floor-level spread and tier terms. Intervals are ±1.645σ. **They are propagated, not yet
-calibrated:** one taped room gives 4–5 checks. Every interval checked so far contains the tape value, including the
-photo ceiling that misses its gate by 0.5 cm.
+lines (corners are intersections) with the tier terms. Area combines independent wall-position noise with the common scale factor in quadrature (E26: an earlier version
+counted the scale term twice). Ceilings combine the
+top-layer spread, floor-level spread and tier terms. Intervals are ±1.645σ. **Coverage on every capture of the taped
+study (E26): photos 8/10 short side, 9/10 long side, 9/10 area, 2/2 ceiling; video 1/1 each.** One room only and the
+off-protocol term is fitted on the same captures, so this supports the model rather than calibrating it.
 
 ### 2.6 Engineering for the walk-in test
 * Checkpoints keyed by a hash of inputs + settings + code version (`recon/checkpoint.py`) mean an interrupted run
