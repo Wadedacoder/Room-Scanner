@@ -15,6 +15,12 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 - `scripts/setup_models.sh` didn't install `kornia` (photo cross-room links), so its weight prefetch failed.
 
 ### Health watch
+- 2026-10-03 00:49 FAIL: the house video run (55 min) was **thrashing** (2.1 GB swap in use, 30% memory free) while
+  the watchdog saw only 200 MB, because it measured RSS. Killed it (COLMAP solve is checkpointed). Fixed the watchdog:
+  it now measures macOS `phys_footprint` (GPU/MPS + compressed + swapped), verified by killing a 1.6 GB MPS tensor
+  that RSS showed as 295 MB. True peaks re-measured (live 6-room photo run 4.22 GB), so the default limit is now
+  5500 MB (user cap 6 GB) in run_guarded.sh, bench/repeat.py and the website; BENCHMARK and TECH_REPORT memory figures
+  corrected (the old ones were RSS and understated GPU use).
 - 2026-10-03 00:19 FAIL (job > 20 min): the house video (`house_b_walk.MOV`, 1698 frames at 8 fps) is in COLMAP
   mapping, not stuck: matching finished 00:13, seed 0 of 4 finished 00:20 with 6 pieces. Left running (~45 min
   expected); a 212 s walk at 8 fps with best-of-4 single-threaded mapping is ~7 min per seed on the M1.

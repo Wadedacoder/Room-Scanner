@@ -70,13 +70,19 @@ photo per doorway (E14).
 
 ## 5. Timing and memory (M1 Air 8 GB, lite profile, live = no cache)
 
-| Run | Runtime | Peak RSS |
+| Run | Runtime | Peak memory (phys_footprint, incl. GPU) |
 |---|---|---|
-| Photos, one room (4 photos) | 10–13 s | < 3.8 GB (watchdog limit) |
-| Photos, full house (17 photos, 6 rooms, with stitching) | 47.7 s | < 3.8 GB |
-| Video, study (64 s, 272 frames) | 306 s (COLMAP 200+ s single-threaded) | < 3.8 GB |
-| LiDAR, 215 s walk with drift correction | 212 s | ~1.3 GB |
-| Any run replayed from checkpoints | 7–8 s | ~0.65 GB |
+| Photos, one room (4 photos), live | 14.7 s | 2.99 GB |
+| Photos, full house (17 photos, 6 rooms, with stitching), live | 135.7 s | **4.22 GB** (cross-room matching at the 4.5 GB GPU cap) |
+| Photos, full house, replayed from checkpoints | 10.1 s | 0.44 GB |
+| Video, study (64 s), COLMAP replayed, depth + join live | 152.9 s | 3.18 GB |
+| LiDAR, 215 s walk with drift correction | 311 s | 0.35 GB |
+
+Memory is measured as macOS `phys_footprint` by `scripts/run_guarded.sh` (2 s sampling). Until 2026-10-03 the watchdog
+read RSS, which omits GPU (MPS), compressed and swapped memory: it reported ~0.65 GB for photo runs that really use
+3–4 GB, and it let a 1698-frame video run thrash 2.1 GB of swap unnoticed. Earlier "peak" figures in EXPERIMENTS are RSS
+and understate memory. The full-house live runtime here (136 s) is longer than the 47.7 s in E17, which was measured
+with the cross-room links already checkpointed.
 
 ## 5b. Clean-machine test (README → result)
 

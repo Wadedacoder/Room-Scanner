@@ -126,8 +126,9 @@ photo ceiling that misses its gate by 0.5 cm.
 * **Repeatability:** three live photo runs of the study are identical to 4 decimals.
 * **LiDAR self-consistency:** 5 rooms with adjacency on the 215 s walk, drift 19.7 → 3.5 cm.
 * **Connected plans:** photos connect 3 of 6 house rooms (the three with a look-through photo); LiDAR connects 5/5.
-* **Runtime (live):** 28 s for one photo room, 48 s for the 6-room house, ~5 min for a 64 s video, 3.5 min for a
-  215 s LiDAR walk. All within 3.8 GB.
+* **Runtime (live):** 15–28 s for one photo room, 136 s for the 6-room house (cross-room matching included), ~5 min for a 64 s video, 3.5 min for a
+  215 s LiDAR walk. Peak memory, including GPU: 4.2 GB for the live 6-room photo run, under the 6 GB cap
+  (BENCHMARK §5).
 
 ## 4. What did not work (and what that taught)
 * **Ray carving for photos** gave rooms 43–69% too small (E6). It needs thousands of viewpoints.

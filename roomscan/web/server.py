@@ -108,7 +108,7 @@ class Runner(threading.Thread):
         guard = CHECKOUT / "scripts/run_guarded.sh" if CHECKOUT else None
         if guard and guard.exists():
             cmd = [str(guard)] + cmd
-        env = dict(os.environ, LIMIT_MB=str(job.get("limit_mb", 3000)), PYTHONUNBUFFERED="1")
+        env = dict(os.environ, LIMIT_MB=str(job.get("limit_mb", 5500)), PYTHONUNBUFFERED="1")
         if CHECKOUT:  # run the code in this checkout, not a possibly stale installed copy
             env["PYTHONPATH"] = str(CHECKOUT) + os.pathsep + env.get("PYTHONPATH", "")
         log = jdir / "log.txt"

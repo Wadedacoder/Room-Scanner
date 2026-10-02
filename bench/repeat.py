@@ -63,7 +63,7 @@ def main() -> int:
     ap.add_argument("--room", default="study")
     ap.add_argument("--gt", type=Path, default=ROOT / "bench/ground_truth/home_tape.yaml")
     ap.add_argument("--out", type=Path)
-    ap.add_argument("--limit-mb", type=int, default=3800)
+    ap.add_argument("--limit-mb", type=int, default=5500)
     ap.add_argument("--summarize-only", action="store_true", help="re-score existing runs in --out, no new runs")
     a = ap.parse_args()
     out = a.out or ROOT / "runs/repeat" / a.capture.name
