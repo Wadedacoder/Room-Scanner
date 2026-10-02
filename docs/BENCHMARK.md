@@ -26,7 +26,9 @@ roomscan run data/raw/video/study_walk1.MOV  -o runs/bench && python bench/gates
 ```
 
 Reading: the photo tier passes its wall and area gates on the one taped room and misses the ceiling gate by 0.5 cm (the
-interval still contains the tape). The video tier fails: see the fix loop (`fixloop/RESULT.md`) for the declared
+interval still contains the tape). The ceiling error (−2.0 cm = −0.7%) is the same size and sign as the
+wall scale error (short side −1.6%): it is metric-scale noise from learned depth, not a ceiling-specific bias, so it is
+not tuned away on this single room (a correction fitted to one number would be fitting the test). The video tier fails: see the fix loop (`fixloop/RESULT.md`) for the declared
 worst gate and what remains (36% of frames never registered, DA3 bridges through fast turns, off-protocol capture).
 
 ## 2. Repeatability (live reruns, caches off)
