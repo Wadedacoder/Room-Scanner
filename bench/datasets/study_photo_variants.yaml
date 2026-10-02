@@ -1,0 +1,34 @@
+# Photo-tier variants of one real capture: the study, iPhone 14 Plus, Camera app, 2026-10-02 17:14:16-17:14:37.
+# 13 HEIC stills taken in one turn from the middle of the room, alternating lens and orientation, plus one 34 s walk.
+# Originals: data/raw/photos/study_src/ (gitignored). Each variant is a hard-linked subset under
+# data/raw/photos/<variant>/study/, so `roomscan run data/raw/photos/<variant> -o out/<variant>` sees one room.
+#
+# Grouping uses only what the pipeline itself reads from the files (EXIF lens, focal, pixel orientation).
+# Nothing here is an input to the pipeline: measurements and room layout live in bench/ground_truth/home_tape.yaml,
+# read by the scorer only.
+#
+# Lens per photo (EXIF FocalLength / FocalLengthIn35mmFilm):
+#   0.5x ultra-wide   1.54 mm / 14 mm   4608 L, 4609 P, 4614 P, 4618 P, 4619 P
+#   1x wide           5.7 mm  / 26 mm   4610 P, 4611 L, 4612 L, 4615 P, 4616 L, 4620 P
+#   ultra-wide crop   1.54 mm / 26 mm   4613 L, 4617 L   (the focal and the 35 mm-equivalent disagree: a digitally
+#                                                         cropped ultra-wide frame; tests which field we trust)
+# L = landscape 4032x3024, P = portrait 3024x4032. All EXIF Orientation = 1 (pixels already upright).
+
+space_id: home_tape
+room: study
+device: iPhone 14 Plus
+source: data/raw/photos/study_src
+video: data/raw/video/study_walk1.MOV   # 34 s, 1920x1080 HEVC, no focal in metadata
+
+variants:
+  - {id: study_uw05,            photos: [4608, 4609, 4614, 4618, 4619],             tests: "protocol lens (0.5x), mixed orientation"}
+  - {id: study_uw05_portrait,   photos: [4609, 4614, 4618, 4619],                   tests: "0.5x, one orientation"}
+  - {id: study_w1x,             photos: [4610, 4611, 4612, 4615, 4616, 4620],       tests: "1x (off-protocol), mixed orientation; E6 proxy frames were 1x"}
+  - {id: study_w1x_landscape,   photos: [4611, 4612, 4616],                         tests: "1x, landscape only"}
+  - {id: study_w1x_portrait,    photos: [4610, 4615, 4620],                         tests: "1x, portrait only"}
+  - {id: study_landscape_mixed, photos: [4608, 4611, 4612, 4613, 4616, 4617],       tests: "landscape, three intrinsics in one folder"}
+  - {id: study_portrait_mixed,  photos: [4609, 4610, 4614, 4615, 4618, 4619, 4620], tests: "portrait, 0.5x + 1x in one folder"}
+  - {id: study_uwcrop,          photos: [4613, 4617],                               tests: "minimum 2 photos, contradictory focal metadata"}
+
+# Not a protocol-compliant capture: the protocol asks for 8 landscape 0.5x photos and only one (4608) exists.
+# A compliant study set is still to be captured.

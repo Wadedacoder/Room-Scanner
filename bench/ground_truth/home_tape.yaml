@@ -5,18 +5,23 @@ space_id: home_tape
 measured_on: 2026-10-02
 instrument: tape
 instrument_model: ""          # e.g. "Stanley 5 m"
-phone: ""                     # e.g. "iPhone 15" (Settings > General > About > Model Name)
+phone: "iPhone 14 Plus"       # e.g. "iPhone 15" (Settings > General > About > Model Name)
 
 rooms:
-  - id: room1                 # rename freely (bedroom, kitchen...), must match the photo folder name
-    ceiling_height_cm: [null, null]     # floor to ceiling, in a corner, along the wall
+  - id: study                 # rename freely (bedroom, kitchen...), must match the photo folder name
+    ceiling_height_cm: [274.3, null]    # 108 in
+    # Four readings taken before the wall order was recorded: 138, 130, 123, 123 in = 350.5, 330.2, 312.4, 312.4 cm.
+    # 138 vs 130 on opposite walls is explained by a cove near the second doorway. Still to record: the clockwise
+    # order from the first doorway, the cove's width and depth, both door widths, and second readings.
+    unassigned_wall_readings_cm: [350.5, 330.2, 312.4, 312.4]
     walls:                              # clockwise, starting with the wall that has the door; label them w1, w2...
       - {id: w1, length_cm: [null, null]}
       - {id: w2, length_cm: [null, null]}
       - {id: w3, length_cm: [null, null]}
       - {id: w4, length_cm: [null, null]}
     openings:                           # inside the frame, jamb to jamb (doors) / reveal to reveal (windows)
-      - {id: d1, wall: w1, type: door, width_cm: [null, null], height_cm: [null], connects_to: hall}
+      - {id: d1, wall: w1, type: door, width_cm: [null, null], height_cm: [null], connects_to: null}
+      - {id: d2, wall: null, type: door, width_cm: [null, null], height_cm: [null], connects_to: null}
   - id: room2
     ceiling_height_cm: [null, null]
     walls:

@@ -131,3 +131,14 @@ On the proxy set (`c00a170fe1`, 8 sweep stills per room) it first gave rooms 43�
   overlapping 0.5× ring is the intended fix and can only be tested on real photos.
 * **Cause 3, open:** an open-ended corridor leaks into neighbouring rooms without doorway detection.
 * Runtime: 410 s for 3 rooms × 8 photos on the M1, not yet profiled.
+
+## E7 (planned): photo tier without EXIF metadata
+
+**Question:** what does the photo tier deliver when the focal length is missing (photos sent through a chat app,
+screenshots, edited exports)? The first study capture arrived like this: 6 of 9 JPGs at 1125×2200 with no EXIF.
+**Why it matters:** E1 found the EXIF focal is the main source of metric scale (predicted focal was off by up to +24%,
+scale error up to +18%). Today `check_capture.py` blocks such photos instead of degrading.
+**Plan:** strip EXIF from each `study_*` variant (`bench/datasets/study_photo_variants.yaml`) and from the proxy sets,
+run with the predicted focal, and compare wall error and interval width against the same set with EXIF. Decide
+between (a) refusing, (b) running with predicted focal and a much wider interval, (c) a device-model focal lookup.
+The interval must widen enough to stay calibrated; confident garbage on thin input caps the total score.
