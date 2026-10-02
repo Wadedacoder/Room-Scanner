@@ -8,6 +8,12 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Added
+- `bench/gates.py`: scores a plan.json against the tape sheet with the brief's per-tier gates (walls paired by opposite
+  sides, area, ceiling ≤ 1.5 cm, opening widths ≤ 2 cm on ≥ 85% counting missed and phantom openings, interval
+  coverage). Study, photo tier: walls and area pass; ceiling fails (−2.0 cm, interval holds). Video after the fix
+  loop: walls −4.0% / −6.9%, fail ±3%.
+
 ## [0.7.0] - 2026-10-02 · fix loop: video joins all COLMAP pieces · tag `v0.7.0` (= `fixloop-after`)
 
 ### Fixed (fix loop, `fixloop/`)

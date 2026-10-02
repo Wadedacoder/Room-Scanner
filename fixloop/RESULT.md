@@ -44,3 +44,8 @@ instead of one.
   scale factors here range 1.18–7.53, a sign that the bridge has to absorb large scale differences between pieces.
 * Metric scale comes from DA3Metric (E1–E2: −1% … −9% scale error on its own), now estimated per piece.
 * The capture is off-protocol (1× lens, fast turns, E9): the protocol's 0.5× lens and slow turns target exactly these.
+
+Note: `fixloop/after/plan.json` and `fixloop/after_v1/plan.json` record `pipeline_version: 0.6.1` because the version
+string was bumped to 0.7.0 in the release commit after these runs; the code that produced them is the `fixloop-after`
+state (identical except for that string). Gate scoring with `bench/gates.py` (long side vs the mean of the two opposite
+walls, 3.404 m): after −4.0% / −6.9%, area −10.8%.
