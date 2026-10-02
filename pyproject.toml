@@ -35,3 +35,11 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 110
+
+[tool.hatch.build.targets.wheel]
+packages = ["roomscan"]
+
+[tool.hatch.build.targets.wheel.force-include]
+# ship configs + schema inside the wheel so a regular (non-editable) install works
+"configs" = "roomscan/_data/configs"
+"schema" = "roomscan/_data/schema"

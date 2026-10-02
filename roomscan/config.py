@@ -22,8 +22,9 @@ from typing import Any
 import yaml
 
 from roomscan import models
+from roomscan.paths import data_dir
 
-CONFIG_DIR = Path(__file__).resolve().parents[1] / "configs"
+CONFIG_DIR = data_dir("configs")
 PROFILE_META_KEYS = {"description"}
 
 

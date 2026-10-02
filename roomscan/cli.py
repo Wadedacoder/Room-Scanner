@@ -86,7 +86,9 @@ def run(
 
     plan, _ = run_lidar(capture, cfg)
     plan["capture"]["config_digest"] = cfg.digest
-    schema = json.loads((Path(__file__).resolve().parents[1] / "schema/plan.schema.json").read_text())
+    from roomscan.paths import data_dir
+
+    schema = json.loads((data_dir("schema") / "plan.schema.json").read_text())
     jsonschema.validate(plan, schema)
     (run_dir / "plan.json").write_text(json.dumps(plan, indent=1))
     (run_dir / "plan.svg").write_text(render_svg(plan))
