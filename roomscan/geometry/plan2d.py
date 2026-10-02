@@ -90,6 +90,30 @@ def carve(start: np.ndarray, end: np.ndarray, grid: Grid, stop_short: float = 0.
     return counts.reshape(grid.shape)
 
 
+def enclosed_by_walls(band_uv: np.ndarray, walls: np.ndarray, grid: Grid, traj_px: np.ndarray,
+                      gap_close_m: float = 0.3) -> np.ndarray:
+    """Sparse-view interior: flood from the cameras through non-wall space, bounded by the convex hull of all
+    observed wall-band points. Walls are dilated by `gap_close_m` first so small holes between observed wall pieces
+    do not leak; the dilation is given back afterwards."""
+    hull_img = np.zeros(grid.shape, np.uint8)
+    px = grid.to_px(band_uv)
+    ok = (px[:, 0] >= 0) & (px[:, 0] < grid.shape[1]) & (px[:, 1] >= 0) & (px[:, 1] < grid.shape[0])
+    if ok.sum() < 3:
+        return np.zeros(grid.shape, bool)
+    hull = cv2.convexHull(px[ok].astype(np.int32))
+    cv2.fillConvexPoly(hull_img, hull, 1)
+    k = max(1, int(gap_close_m / grid.res))
+    thick = cv2.dilate(walls.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1)))
+    free = (hull_img.astype(bool) & ~thick.astype(bool)).astype(np.uint8)
+    region = np.zeros((grid.shape[0] + 2, grid.shape[1] + 2), np.uint8)
+    for c, r in traj_px:
+        if 0 <= r < grid.shape[0] and 0 <= c < grid.shape[1] and free[r, c] and not region[r + 1, c + 1]:
+            cv2.floodFill(free, region, (int(c), int(r)), 1, flags=4 | cv2.FLOODFILL_MASK_ONLY | (255 << 8))
+    inside = region[1:-1, 1:-1] > 0
+    inside = cv2.dilate(inside.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1)))
+    return inside.astype(bool) & hull_img.astype(bool) & ~walls
+
+
 @dataclass
 class PlanMaps:
     grid: Grid
@@ -99,7 +123,10 @@ class PlanMaps:
     traj_px: np.ndarray
 
 
-def build_maps(P: np.ndarray, floor_y: float, theta: float, cam_xz: np.ndarray, rays, res: float = 0.02) -> PlanMaps:
+def build_maps(P: np.ndarray, floor_y: float, theta: float, cam_xz: np.ndarray, rays, res: float = 0.02,
+               interior_mode: str = "carve") -> PlanMaps:
+    """interior_mode: "carve" (dense LiDAR: space rays crossed) or "walls" (sparse photos: space enclosed by the
+    observed walls, reached from the cameras, kept inside the hull of everything observed)."""
     R = rot2(-theta)
     uv = P[:, [0, 2]] @ R.T
     y = P[:, 1] - floor_y
@@ -115,8 +142,13 @@ def build_maps(P: np.ndarray, floor_y: float, theta: float, cam_xz: np.ndarray, 
     # interior = space that LiDAR rays crossed (free-space carving), minus walls. Rays stop 5 cm short of their
     # surface so the wall itself is not carved.
     traj_px = grid.to_px(cam_xz @ R.T)
-    free = carve(rays[0] @ R.T, rays[1] @ R.T, grid) >= 3  # >= ~3 independent rays
-    free &= ~walls
+    if interior_mode == "carve":
+        free = carve(rays[0] @ R.T, rays[1] @ R.T, grid) >= 3  # >= ~3 independent rays
+        free &= ~walls
+    else:
+        free = enclosed_by_walls(uv[(y > 0.2) & (y < 1.8)], walls, grid, traj_px)
+        if free.sum() * res * res < 0.5:  # cameras never landed in open space (noisy walls): fall back to carving
+            free = (carve(rays[0] @ R.T, rays[1] @ R.T, grid) >= 3) & ~walls
     interior = cv2.morphologyEx(free.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
     interior = cv2.morphologyEx(interior, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8)).astype(bool)
     return PlanMaps(grid, walls, floor, interior, traj_px)
@@ -252,3 +284,12 @@ def _signed_area(p: np.ndarray) -> float:
 
 def polygon_area(p: np.ndarray) -> float:
     return abs(_signed_area(p))
+
+
+def largest_component(mask: np.ndarray) -> np.ndarray:
+    n, lab = cv2.connectedComponents(mask.astype(np.uint8))
+    if n <= 1:
+        return mask.astype(bool)
+    sizes = np.bincount(lab.ravel())
+    sizes[0] = 0
+    return lab == int(np.argmax(sizes))

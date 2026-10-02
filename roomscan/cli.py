@@ -77,14 +77,17 @@ def run(
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "config.resolved.yaml").write_text(cfg.dump())
     typer.echo(f"tier={tier} profile={cfg.profile} device={cfg['runtime']['device']} config={cfg.digest}")
-    if tier != "lidar":
-        raise typer.Exit(f"pipeline for tier '{tier}' not implemented yet")
     import jsonschema
 
-    from roomscan.pipeline.lidar import run_lidar
     from roomscan.render.svg import render_svg
 
-    plan, _ = run_lidar(capture, cfg)
+    if tier == "lidar":
+        from roomscan.pipeline.lidar import run_lidar as run_tier
+    elif tier == "photos":
+        from roomscan.pipeline.photos import run_photos as run_tier
+    else:
+        raise typer.Exit(f"pipeline for tier '{tier}' not implemented yet")
+    plan, _ = run_tier(capture, cfg)
     plan["capture"]["config_digest"] = cfg.digest
     from roomscan.paths import data_dir
 
