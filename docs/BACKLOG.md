@@ -28,7 +28,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 ## Tiers
 | # | Item | Serves | Status |
 |---|---|---|---|
-| 2.1 | Video: join COLMAP pieces (DA3 through turns, E5) | P1 video | ⬜ |
+| 2.1 | Video: join COLMAP pieces (DA3 through turns, E5) | P1 video | ✅ v0.7.0 (fix loop) |
 | 2.2 | Video: score house_b_walk.MOV (212 s, 6 rooms) | P2 | ⬜ |
 | 2.3 | Photo intervals calibrated (coverage ≈ 90%) | P2 calibration | ⬜ |
 | 2.4 | LiDAR open-passage adjacency between split rooms | P2 adjacency | ✅ E19 (one unverified passage) |
@@ -43,7 +43,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 ## Benchmark and deliverables
 | # | Item | Serves | Status |
 |---|---|---|---|
-| 4.1 | Fix loop: declare worst gate (number, cause, prediction) BEFORE fixing; before/after regenerable | P4 (25%) | ⬜ |
+| 4.1 | Fix loop: declare worst gate (number, cause, prediction) BEFORE fixing; before/after regenerable | P4 (25%) | ✅ fixloop/ (video study −35.8% → −4.0%) |
 | 4.2 | Head-to-head vs magicplan on 2 rooms | P3 (10%) | ⏸ needs a Pro iPhone |
 | 4.3 | Device matrix | D2 | ⬜ |
 | 4.4 | Benchmark report (gates per tier, repeatability, timing) | D5 | ⬜ |

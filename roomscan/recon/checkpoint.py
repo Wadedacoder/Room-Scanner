@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 
 # bump when a step's code changes what it outputs
-CODE_VERSION = {"da3_recon": "2", "sfm": "2", "links": "1"}
+CODE_VERSION = {"da3_recon": "2", "sfm": "3", "links": "1"}
 
 
 def enabled() -> bool:

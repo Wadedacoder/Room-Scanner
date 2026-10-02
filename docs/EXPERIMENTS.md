@@ -427,3 +427,9 @@ LiDAR rooms come from one cloud, so they are already in one frame; adjacency is 
 
 The c00a living–bathroom passage is probably false (the walk went living → corridor → bathroom) but can't be checked
 without the space. Kept as a known issue.
+
+## E20: Fix loop: joining COLMAP pieces in the video tier (2026-10-02)
+
+See `fixloop/DECLARATION.md` (written first) and `fixloop/RESULT.md`. Study video, tape ground truth:
+before −35.8% short side / −34.5% area (35% of frames) → after −4.0% / −8.1% (64% of frames, 5 of 5 pieces joined).
+Prediction met on short side and area, missed on frames used (64% vs ≥ 70%); ±3% gate still fails, as predicted.

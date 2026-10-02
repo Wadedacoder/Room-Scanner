@@ -8,6 +8,19 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-02 · fix loop: video joins all COLMAP pieces · tag `v0.7.0` (= `fixloop-after`)
+
+### Fixed (fix loop, `fixloop/`)
+- **Video rooms built from one piece of the walk.** Declared before the fix (`fixloop/DECLARATION.md`): study video
+  short side −35.8%, area −34.5%, 35% of frames used; cause: only COLMAP's largest piece was used.
+  Fix: every piece is made metric on its own (DA3Metric vs its sparse points), the largest piece anchors the frame, and
+  each other piece is bridged by a DA3 chain through the turn at its closest frames in time
+  (`roomscan/recon/bridge.py`; `recon.video_join_pieces`, default on).
+  - Checked: 5 of 5 pieces joined, 64% of frames used, short side −4.0%, long side −4.0%, area −8.1% with the interval
+    holding the tape value. The ±3% gate still fails (as predicted); reasons in `fixloop/RESULT.md`.
+  - A first implementation (after_v1) joined pieces in time order and dropped the largest one; kept on record.
+- SfM checkpoints now carry every piece (cache version bump).
+
 ### Added
 - LiDAR adjacency (`plan.json` `adjacency`, openings' `connects_to`): shared doors seen from both rooms, and open
   passages (connected ray-crossed floor directly between two rooms). Checked (E19): c7d28f72c6 3 door links + 1 passage;

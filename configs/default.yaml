@@ -38,6 +38,7 @@ recon:                      # learned geometry for the photo and video tiers (se
   window_overlap: 2         # shared views between consecutive windows
   photo_stitch: true        # link photo rooms through photos that see into each other (E14, roomscan/stitch)
   photo_outline: walls      # walls (flood inside observed walls) | box (outermost long wall lines, E13)
+  video_join_pieces: true   # fix loop: join COLMAP pieces through fast turns (false = largest piece only)
   video_fps: 8.0            # frames per second sampled for camera tracking (COLMAP)
   video_matcher: sequential # sequential | exhaustive (all pairs: finds revisits, slower)
   video_seq_overlap: 10     # sequential matching: each frame is matched with this many following frames

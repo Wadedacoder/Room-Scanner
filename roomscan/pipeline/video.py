@@ -62,43 +62,75 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     f_guess = (max(w, h) / 2) / np.tan(np.radians(FOV_1X_DEG / 2))
     sfm = run_sfm(frames_dir, names, f_guess, work, rc["video_matcher"], rc["video_seq_overlap"])
     t_sfm = time.time() - t0
-    reg = sorted(sfm.c2w)
     f_px = float(sfm.K[0, 0])
     fov = float(np.degrees(2 * np.arctan(max(w, h) / 2 / f_px)))
     lens = "0.5x ultra-wide" if fov > 90 else ("1x wide" if fov > 45 else "tele")
+    idx_of = {n: i for i, n in enumerate(names)}
 
-    # keyframes for dense depth: evenly spaced over the registered frames
-    n_key = min(cfg["recon"]["video_keyframes"], len(reg))
-    keys = [reg[i] for i in np.linspace(0, len(reg) - 1, n_key).round().astype(int)]
-    imgs = [np.asarray(Image.open(frames_dir / k).convert("RGB")) for k in keys]
-    depths, s = metric_depths(cfg, imgs, f_px)
+    # pieces in time order; the fix loop's "before" used only the largest one (recon.video_join_pieces=false)
+    pieces = sorted(sfm.all_pieces, key=lambda p: min(idx_of[n] for n in p.c2w))
+    if not rc.get("video_join_pieces", True):
+        pieces = [max(sfm.all_pieces, key=lambda p: len(p.c2w))]
 
-    # metric scale: DA3Metric depth vs COLMAP depth of the sparse points each keyframe observes
-    ratios = []
-    for k, D in zip(keys, depths):
-        uv, idx = sfm.obs[k]
-        if len(idx) < 10:
+    # keyframes spread over all pieces in proportion to their size (>= 3 each), for metric scale + dense depth
+    total = sum(len(p.c2w) for p in pieces)
+    keys_per_piece = []
+    for p in pieces:
+        reg = sorted(p.c2w, key=idx_of.get)
+        k = min(len(reg), max(3, round(rc["video_keyframes"] * len(reg) / total)))
+        keys_per_piece.append([reg[i] for i in np.linspace(0, len(reg) - 1, k).round().astype(int)])
+    all_keys = [k for ks in keys_per_piece for k in ks]
+    imgs = {k: np.asarray(Image.open(frames_dir / k).convert("RGB")) for k in all_keys}
+    depth_list, s = metric_depths(cfg, [imgs[k] for k in all_keys], f_px)
+    depths = dict(zip(all_keys, depth_list))
+
+    # metric scale PER PIECE: DA3Metric depth vs that piece's own sparse COLMAP depths (pieces have unrelated scales)
+    pieces_metric, piece_scales, all_ratios = [], [], []
+    for p, ks in zip(pieces, keys_per_piece):
+        ratios = []
+        for k in ks:
+            uv, idx = p.obs[k]
+            if len(idx) < 10:
+                continue
+            T = p.c2w[k]
+            z = ((p.points[idx] - T[:3, 3]) @ T[:3, :3])[:, 2]
+            px = np.floor(uv * s).astype(int)
+            D = depths[k]
+            ok = (z > 1e-6) & (px[:, 0] >= 0) & (px[:, 0] < D.shape[1]) & (px[:, 1] >= 0) & (px[:, 1] < D.shape[0])
+            if ok.sum() >= 10:
+                ratios.append(np.median(D[px[ok, 1], px[ok, 0]] / z[ok]))
+        if not ratios:
             continue
-        T = sfm.c2w[k]
-        Xc = (sfm.points[idx] - T[:3, 3]) @ T[:3, :3]  # world -> camera
-        z = Xc[:, 2]
-        px = np.floor(uv * s).astype(int)
-        ok = (z > 1e-6) & (px[:, 0] >= 0) & (px[:, 0] < D.shape[1]) & (px[:, 1] >= 0) & (px[:, 1] < D.shape[0])
-        if ok.sum() < 10:
-            continue
-        ratios.append(np.median(D[px[ok, 1], px[ok, 0]] / z[ok]))
-    if not ratios:
+        sc = float(np.median(ratios))
+        all_ratios += [r / sc for r in ratios]
+        piece_scales.append(sc)
+        m = {}
+        for n, T in p.c2w.items():
+            T = T.copy()
+            T[:3, 3] *= sc
+            m[idx_of[n]] = T
+        pieces_metric.append(m)
+    if not pieces_metric:
         raise RuntimeError("could not fix metric scale: no keyframe sees enough COLMAP points")
-    scale = float(np.median(ratios))
-    scale_spread = float(np.std(ratios) / scale) if len(ratios) > 2 else 0.1
+    scale_spread = float(np.std(all_ratios)) if len(all_ratios) > 2 else 0.1
+    join_log = []
+    if len(pieces_metric) > 1:
+        from roomscan.recon.bridge import join_pieces
 
-    # dense metric cloud: each keyframe's metric depth placed with COLMAP's (scaled) pose
+        world, join_log = join_pieces(pieces_metric, lambda i: np.asarray(Image.open(frames_dir / names[i])
+                                                                          .convert("RGB")), cfg)
+    else:
+        world = pieces_metric[0]
+    reg = [names[i] for i in sorted(world)]
+    keys = [k for k in all_keys if idx_of[k] in world]
+
+    # dense metric cloud: each keyframe's metric depth placed with its joined metric pose
     K = sfm.K.copy()
     K[:2] *= s
     pts, cams = [], []
-    for k, D in zip(keys, depths):
-        T = sfm.c2w[k].copy()
-        T[:3, 3] *= scale
+    for k in keys:
+        D = depths[k]
+        T = world[idx_of[k]]
         v, u = np.nonzero((D > 0.2) & (D < 6.0))
         v, u = v[::2], u[::2]
         z = D[v, u]
@@ -126,6 +158,8 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
                         "runtime_s": round(time.time() - t0, 1),
                         "video": {"duration_s": round(info.duration_s, 1), "hdr": info.hdr, "frames": len(names),
                                   "registered": len(reg), "pieces": sfm.pieces[:5], "keyframes": len(keys),
+                                  "pieces_joined": sum(1 for g in join_log if g.get("joined")) + 1,
+                                  "join_log": join_log,
                                   "focal_px": round(f_px, 1), "fov_deg": round(fov, 1), "lens_estimate": lens,
                                   "metric_scale_spread": round(scale_spread, 3), "sfm_s": round(t_sfm, 1),
                                   "sfm": {"fps": rc["video_fps"], "matcher": rc["video_matcher"],
@@ -140,4 +174,4 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
         warns.append("HDR video: converted to standard range for processing (the protocol asks for HDR off)")
     plan["warnings"] = warns + ["video-tier intervals use a 4% scale term from proxy experiments; not yet calibrated",
                                 "openings, adjacency, damage and scope are not implemented yet"]
-    return plan, {"backend": res.debug, "scale": scale, "ratios": ratios}
+    return plan, {"backend": res.debug, "piece_scales": piece_scales, "join_log": join_log}
