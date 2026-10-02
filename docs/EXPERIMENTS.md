@@ -566,3 +566,33 @@ database in place of SIFT, geometrically verified by COLMAP, then mapped exactly
 * Not pursued further tonight (each attempt costs ~40 min). Likely causes to test next: repetitive texture
   (cupboard, whiteboard) giving consistent-but-wrong LightGlue matches that pass the epipolar check, and the lower
   640 px keypoint precision. SIFT stays the default; the switch stays for experiments.
+
+## E26: Are the photo intervals calibrated? Every capture of the taped study (2026-10-03)
+
+`bench/calibration.py`: every plan containing the study (10 photo captures incl. off-protocol variant sets of the same
+room, plus the video) scored against tape: error and whether the reported 90% interval holds, per quantity. The sets
+are not independent (several reuse photos), so this is evidence for the error model, not a statistical calibration.
+
+| | Before | After |
+|---|---|---|
+| photo short-side coverage | 3/12 | **8/10** |
+| photo long-side coverage | 8/12 | **9/10** |
+| photo floor-area coverage | 7/12 (±28–29% claimed) | **9/10** (±17% protocol, ±49% off-protocol) |
+| protocol capture (house_b study) | all hold | all hold (area interval ±28% → ±17%) |
+
+**Finding 1: the error depends on protocol compliance, nothing else measured predicts it.** The one protocol capture
+(4 × landscape 0.5×) is within −1.6% / +4.5%. The off-protocol sets (1× lens, portrait, mixed lenses, 2–3 photos) are
+off by 9–21% on the short side (RMS ≈ 14%), plus one −79% failure (3 portrait 1× photos), while claiming ±9%.
+DA3's focal disagreement and the metric scale factor did not separate good from bad sets.
+→ **Off-protocol rooms now get a 15% scale term** (5% for protocol rooms; 25% when EXIF focal is missing), with a
+warning naming the deviation. The 15% is fitted on these same captures: in-sample.
+
+**Finding 2: area intervals double-counted the scale term**: once inside every wall's sigma, again as a linear
+2·rel·area, and summed linearly. Now: independent wall-position noise and the common scale factor in quadrature.
+Same coverage, intervals about a third narrower (video study area ±49% → ±32%).
+
+Remaining misses: the 2-photo crop set (short side −20.5% vs ±25%) and the 3 portrait 1× photos (−79%), the two most
+degenerate captures. A rule that refuses to report with fewer than 4 photos would remove both; not adopted, because the
+brief values a measurement with an honest interval over none, and the warning already names the problem.
+
+Also found: `-s damage.backend=off` was rejected (YAML reads `off` as false); normalised like `drift.method`.

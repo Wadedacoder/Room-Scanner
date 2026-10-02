@@ -65,8 +65,9 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
         sightlines = tuple(np.concatenate([x[i] for x in sl]) for i in range(3))
         fwd = (rec.c2w[:, :3, 2] @ Gr.T)[:, [0, 2]]  # camera viewing directions, gravity frame
         hfov = float(2 * np.arctan(rec.depth.shape[2] / 2 / rec.K[0, 0, 0]))
-        # no EXIF focal: the assumed 0.5x lens may be wrong (1x would be 2x off), so scale is far less certain
-        err = PHOTO_ERR if not photos[0].focal_source.startswith("assumed") else ErrorModel(PHOTO_ERR.abs_m, 0.25)
+        err, why = _photo_error(photos)
+        if why:
+            warnings.append(f"{name}: off-protocol photos ({why}); scale interval widened to ±{100 * err.rel:.0f}% (1σ)")
         res = rooms_from_cloud(P, cams, rays, err, VOXEL, split=False, id_prefix=name, label=name,
                                sightlines=sightlines, cam_fwd_xz=fwd, hfov=hfov,
                                interior_mode=cfg["recon"]["photo_outline"])  # sparse views can't carve (E6)
@@ -264,3 +265,21 @@ def _pair_doors(rooms: dict, adjacency: list[dict], max_d: float = 0.8) -> None:
             _, oa, ob = best
             oa["connects_to"], ob["connects_to"] = rb["id"], ra["id"]
             a["via"] += f", door {oa['id']}↔{ob['id']} ({best[0]:.2f} m apart)"
+
+
+def _photo_error(photos) -> tuple[ErrorModel, str]:
+    """Scale term by protocol compliance (E26). On the taped study, the protocol capture (landscape 0.5x ring) is within
+    2% and its intervals hold; 8 off-protocol sets of the same room (1x lens, portrait, mixed lenses, 2-3 photos) were
+    off by 9-21% on the short side (RMS ~14%, plus one -79% outlier) while claiming +-9%. The 15% term is fitted on those
+    same captures (in-sample)."""
+    if any(p.focal_source.startswith("assumed") for p in photos):  # the assumed 0.5x lens may be wrong (1x = 2x off)
+        return ErrorModel(PHOTO_ERR.abs_m, 0.25), "no EXIF focal length"
+    reasons = []
+    f35 = [float(p.focal_source.split("=")[1]) for p in photos if p.focal_source.startswith("exif f35=")]
+    if any(f >= 18 for f in f35):
+        reasons.append("not all 0.5x lens")
+    if any(p.image.shape[0] > p.image.shape[1] for p in photos):
+        reasons.append("portrait photos")
+    if len(photos) < 4:
+        reasons.append(f"only {len(photos)} photos")
+    return (ErrorModel(PHOTO_ERR.abs_m, 0.15), ", ".join(reasons)) if reasons else (PHOTO_ERR, "")

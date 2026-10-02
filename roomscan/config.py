@@ -125,6 +125,8 @@ def _validate(cfg: dict) -> None:
         cfg["drift"]["method"] = "off"
     if cfg["drift"]["method"] not in {"off", "posegraph"}:
         raise ConfigError("drift.method must be off|posegraph")
+    if cfg["damage"]["backend"] is False:  # `-s damage.backend=off` (YAML 1.1 boolean)
+        cfg["damage"]["backend"] = "off"
     if cfg["damage"]["backend"] not in {"owlv2", "vlm", "off"}:
         raise ConfigError("damage.backend must be owlv2|vlm|off")
     if cfg["damage"]["cache"] not in {"replay", "live", "replay_or_live"}:

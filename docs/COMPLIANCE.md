@@ -14,7 +14,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done · ❌ fails gate (repor
 | 8 | Damage regions, class + metric extent (P2) | roomscan/damage/ (detect_local.py OWLv2 default, detect_claude.py optional, project.py, stage.py) | plan.json `damage` (cached detector outputs in cache/vlm/) | 🟨 runs offline; 0 false positives on 17 clean photos (E24); recall unmeasured (no staged damage) |
 | 9 | Concealed-damage flags with fired rule (P2) | roomscan/scope/rules.yaml, engine.py | plan.json `concealed_flags[].rule_id` | ✅ (tests/test_damage_scope.py) |
 | 10 | Scope line items keyed to surfaces (P2) | roomscan/scope/ | plan.json `scope[].surface_id` + quantity interval | ✅ |
-| 11 | Interval on every measurement (P2) | roomscan/pipeline/backend.py `meas` | Measurement.lo/hi on every number | 🟨 propagated; calibration needs more tape |
+| 11 | Interval on every measurement (P2) | roomscan/pipeline/backend.py `meas` | Measurement.lo/hi on every number; coverage 8–9/10 on all 10 photo captures of the taped room (E26) | 🟨 one room only |
 | 12 | One command per capture, JSON to schema, rendered plan (P2) | roomscan/cli.py, schema/plan.schema.json, roomscan/render/svg.py | `roomscan run` (schema-validated), all 3 tiers | ✅ |
 | 13 | Benchmark set composition (P2) | bench/ground_truth/home_tape.yaml, bench/datasets/release_manifest.json | tape + checksummed raw captures | 🟨 1 taped room ⏸ |
 | 14 | Opening width gate (P2) | bench/gates.py | scorer done | ⏸ door widths untaped |

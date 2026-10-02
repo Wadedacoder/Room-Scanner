@@ -117,7 +117,7 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
             warnings.append(f"{rid}: could not trace a closed outline; skipped")
             continue
         poly = g.polygon
-        walls, perim, perim_var = [], 0.0, 0.0
+        walls, perim, perim_var, fit_var = [], 0.0, 0.0, 0.0
         n = len(poly)
         for i in range(n):
             a, b = poly[i], poly[(i + 1) % n]
@@ -129,8 +129,11 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
                           "length": meas(L, sig, "m")})
             perim += L
             perim_var += sig ** 2
+            fit_var += f_prev.sigma ** 2 + f_next.sigma ** 2 + 2 * err.abs_m ** 2  # wall noise without the scale term
         area = p2.polygon_area(poly)
-        area_sig = float(np.sqrt(perim_var) * np.sqrt(area) / 2 + perim * err.abs_m / 2 + 2 * err.rel * area)
+        # E26: the scale term was counted twice (inside every wall sigma, then again as 2*rel*area, added linearly).
+        # Area = wall-position noise (independent per wall) + a common scale factor (area scales with its square).
+        area_sig = float(np.hypot(np.sqrt(fit_var) * np.sqrt(area) / 2, 2 * err.rel * area))
         inside = MplPath(poly).contains_points(P_uv)
         ceil = room_ceiling(P[inside, 1], lev.floor, area, voxel) if floor_ok else None
         if not floor_ok:

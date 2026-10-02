@@ -8,6 +8,15 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Changed (E26: interval calibration on every capture of the taped study)
+- Photo scale term by protocol compliance: 5% for protocol rooms, **15% for off-protocol rooms** (1x lens, portrait,
+  < 4 photos; warned), 25% without EXIF focal. Photo coverage: short side 3/12 → 8/10, area 7/12 → 9/10.
+- Area intervals no longer count the scale term twice (wall noise and scale now in quadrature): same coverage,
+  about a third narrower. `bench/calibration.py` + `bench/results/calibration_study.json`.
+
+### Fixed
+- `-s damage.backend=off` was rejected (YAML boolean); normalised.
+
 ### Added
 - Website shows doors/windows (with `connects_to`), connected rooms, damage regions, concealed-damage flags with the
   rule that fired, and scope line items (all text escaped); checked by rendering in headless Chrome.

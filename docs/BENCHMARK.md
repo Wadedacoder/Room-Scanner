@@ -50,6 +50,20 @@ single-threaded, two runs of this video tracked 92 vs 65 frames (E10).
 LiDAR is deterministic by construction (no learned model; seeded sampling): two runs of `c7d28f72c6` give identical
 room areas and ceilings (checked in E12's regression run and again after E19).
 
+## 2b. Interval calibration (all captures of the taped study, E26)
+
+`python bench/calibration.py runs/e26/*/plan.json` → `bench/results/calibration_study.json`.
+
+| Quantity | Photo coverage (10 captures) | Video (1) |
+|---|---|---|
+| short side | 8/10 | 1/1 |
+| long side | 9/10 | 1/1 |
+| floor area | 9/10 | 1/1 |
+| ceiling | 2/2 | n/a |
+
+Only one room is taped and several capture sets reuse photos, so this supports the error model; it is not a
+statistical calibration. The off-protocol scale term (15%) was fitted on these same captures.
+
 ## 3. LiDAR self-consistency and drift (no tape)
 
 | Capture | Rooms | Footprint | Ceilings | Adjacency | Drift (revisit misalignment) | Runtime |

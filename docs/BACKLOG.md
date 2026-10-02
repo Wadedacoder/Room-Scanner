@@ -30,7 +30,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 |---|---|---|---|
 | 2.1 | Video: join COLMAP pieces (DA3 through turns, E5) | P1 video | ✅ v0.7.0 (fix loop) |
 | 2.2 | Video: score house_b_walk.MOV (212 s, 6 rooms) | P2 | ✅ E21: 3 merged rooms, not usable; intervals now honest |
-| 2.3 | Photo intervals calibrated (coverage ≈ 90%) | P2 calibration | ⬜ |
+| 2.3 | Photo intervals calibrated (coverage ≈ 90%) | P2 calibration | 🟨 E26: 8–9/10 on all study captures (in-sample, one room) |
 | 2.4 | LiDAR open-passage adjacency between split rooms | P2 adjacency | ✅ E19 (one unverified passage) |
 
 ## Contract items not started

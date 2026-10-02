@@ -52,3 +52,7 @@ def test_digest_changes_with_config():
 
 def test_drift_off_survives_yaml_boolean():
     assert load_config("lite", overrides=["drift.method=off"], hw=M1_8)["drift"]["method"] == "off"
+
+
+def test_damage_off_survives_yaml_boolean():
+    assert load_config("lite", overrides=["damage.backend=off"], hw=M1_8)["damage"]["backend"] == "off"
