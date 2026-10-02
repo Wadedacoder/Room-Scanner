@@ -85,8 +85,9 @@ damage (detector → surface projection) → rules.yaml → concealed flags + sc
   drawn to the side with a warning, never guessed into place.
 
 ### 2.4 Damage, concealed flags, scope
-* **Detector** (`damage/detect_claude.py`, pluggable): one Claude `claude-opus-5-5` vision request per room with up
-  to 8 views, structured JSON-schema output (class + box per image on a 0–1000 grid), server-side fallback enabled.
+* **Detector** (pluggable). Default: OWLv2 run locally (`damage/detect_local.py`, no key; defect queries plus negative
+  queries for clean surfaces, 0 false detections on 17 clean photos, E24). Optional: one Claude `claude-opus-5-5`
+  vision request per room (`damage/detect_claude.py`) with up to 8 views, structured JSON-schema output (class + box per image on a 0–1000 grid), server-side fallback enabled.
   Responses are cached by content hash in `cache/vlm/` and committed, so damage replays bit-identically on another
   machine (the brief accepts cached model outputs; `damage.cache=live` forces a fresh call).
 * **Projection** (`damage/project.py`): the box's pixels are back-projected with the view's metric depth and

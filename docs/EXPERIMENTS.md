@@ -493,3 +493,26 @@ ratio 0.25 → 0.15 and min matches 15 → 10).
   Fewer, correct poses beat more, wrong ones.
 * Kept the default (30); the knob stays configurable. The remaining route for 2.5 is better features (DISK+LightGlue
   matches into COLMAP) or a protocol fix (slower turns), not a looser threshold.
+
+## E24: A local damage detector (OWLv2), no API key (2026-10-03)
+
+User question: why does damage need an Anthropic key? It doesn't have to. `roomscan/damage/detect_local.py` runs
+google/owlv2-base-patch16-ensemble (Apache-2.0, open-vocabulary detection) offline and is now the default
+(`damage.backend: owlv2`); Claude stays optional (`vlm`). Same output contract, so projection, rules and scope are shared.
+
+**What can be measured without staged damage: false positives on clean rooms.** The 17 house_b photos (6 rooms) have
+no visible damage (each detection was checked by eye).
+
+| Version | Detections on 17 clean photos | What they were |
+|---|---|---|
+| v1: damage queries only ("a cracked ceiling", …), threshold 0.25 | whole-ceiling boxes in the 2 study photos tested | a query naming a surface matches the clean surface |
+| v2: defect-only queries + 13 negative queries (wall, ceiling, window, door, shadow, …) | 4 | tile border ×2 ("crack"), door-frame gap ("hole"), skirting edge ("crack") |
+| v3: + negatives for tile border, tiles, door frame, skirting, tap | 2 (0.26, 0.28, both "crack") | thin straight lines |
+| **v3 + crack threshold 0.30 (shipped)** | **0** | |
+
+* Negative queries are the main fix: a box whose best label is something undamaged is dropped, and it suppresses
+  overlapping damage boxes in NMS.
+* The crack threshold (0.30) was chosen on the same 17 photos it is reported on: **in-sample**, so 0/17 is optimistic.
+* **Recall is not measured** (no staged-damage captures). The detector may miss faint stains; nothing here says how often.
+* Cost: ~6.5 s per photo on the M1 CPU, ~0.9 GB; house_b full run 93 s with DA3 replayed. Outputs are cached in
+  `cache/vlm/owlv2_*.json` (committed) like the Claude responses.

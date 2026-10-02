@@ -42,13 +42,15 @@ recon:                      # learned geometry for the photo and video tiers (se
   video_fps: 8.0            # frames per second sampled for camera tracking (COLMAP)
   video_matcher: sequential # sequential | exhaustive (all pairs: finds revisits, slower)
   video_seq_overlap: 10     # sequential matching: each frame is matched with this many following frames
+  video_features: sift      # sift | disk_lightglue (learned matches imported into COLMAP; E23)
   video_abs_pose_min_inliers: 30  # COLMAP registration threshold (30 = COLMAP default; lower registers blurrier frames)
 
 drift:
   method: posegraph         # off | posegraph   ("off" is for the ablation only)
 
 damage:
-  backend: vlm              # vlm | off
+  backend: owlv2            # owlv2 (local OWLv2, no key; default) | vlm (Claude, needs ANTHROPIC_API_KEY) | off
+  owlv2_threshold: 0.25     # OWLv2 raw-score cut (a setting, not a calibrated probability)
   vlm_model: claude-opus-5-5
   keyframes_per_room: 10
   cache: replay_or_live     # replay (fail on miss) | live | replay_or_live

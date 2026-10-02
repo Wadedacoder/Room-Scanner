@@ -21,7 +21,7 @@ dependencies = [
 # Dense fusion / ICP / pose graph for the LiDAR tier and drift correction.
 geo = ["open3d==0.19.0"]  # 0.20 macOS wheel dlopens Homebrew libusb; 0.19 is self-contained
 # Learned geometry for the photo and video tiers (Depth Anything 3 is installed from git by scripts/setup_models.sh).
-ml = ["torch>=2.3", "torchvision>=0.18", "huggingface_hub>=0.23", "kornia>=0.7"]
+ml = ["torch>=2.3", "torchvision>=0.18", "huggingface_hub>=0.23", "kornia>=0.7", "transformers>=4.45"]
 # Damage detection with a VLM. Responses are cached under cache/ so benchmark runs replay deterministically.
 vlm = ["anthropic>=0.40"]
 # Local test website (`roomscan serve`).

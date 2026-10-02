@@ -25,6 +25,7 @@ MODELS: dict[str, ModelSpec] = {
     "da3-giant-1.1": ModelSpec("depth-anything/DA3-GIANT-1.1", 1356, "cc-by-nc-4.0", False, True),
     "da3-nested-giant-large": ModelSpec("depth-anything/DA3NESTED-GIANT-LARGE", 1690, "cc-by-nc-4.0", True, True),
     "da3metric-large": ModelSpec("depth-anything/DA3METRIC-LARGE", 334, "apache-2.0", True, False),
+    "owlv2-base": ModelSpec("google/owlv2-base-patch16-ensemble", 155, "apache-2.0", False, False),  # damage
     "mapanything-apache": ModelSpec("facebook/map-anything-apache", 0, "apache-2.0", True, True),
 }
 

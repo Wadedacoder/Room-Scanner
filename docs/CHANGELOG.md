@@ -38,6 +38,9 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   expected); a 212 s walk at 8 fps with best-of-4 single-threaded mapping is ~7 min per seed on the M1.
 
 ### Added
+- **Local damage detector, no API key** (E24): OWLv2 (Apache-2.0) is the default `damage.backend`; Claude is optional.
+  Negative queries + a crack threshold give 0 false detections on the 17 clean house photos (in-sample); recall
+  unmeasured. Weights prefetched by `setup_models.sh`; outputs cached in `cache/vlm/`.
 - `recon.video_abs_pose_min_inliers` (default 30 = unchanged) and E22: looser COLMAP registration tracks more frames but
   places them wrongly (study −16% at 20, no room at 15); default kept.
 - Video repeatability: `study_walk1.MOV`, 3 live runs (COLMAP rerun each time) identical to 4 decimals

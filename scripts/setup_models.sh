@@ -8,7 +8,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 DA3_COMMIT=3d835ec
 UV="$(command -v uv || echo "$HOME/.local/bin/uv")"
-"$UV" pip install -q torch torchvision kornia pycolmap huggingface_hub safetensors addict einops omegaconf evo plyfile \
+"$UV" pip install -q torch torchvision kornia transformers pycolmap huggingface_hub safetensors addict einops omegaconf evo plyfile \
   "moviepy==1.0.3"
 "$UV" pip install -q --no-deps "git+https://github.com/ByteDance-Seed/depth-anything-3@${DA3_COMMIT}"
 # pycolmap and torch each bundle libomp and abort if loaded in one process (OMP Error #15): the pipeline runs
@@ -37,4 +37,6 @@ import kornia.feature as KF  # cross-room photo links; weights land in the torch
 KF.DISK.from_pretrained("depth")
 KF.LightGlueMatcher("disk")
 print("weights: DISK + LightGlue (kornia) cached")
+from roomscan.damage.detect_local import MODEL  # local damage detector (Apache-2.0)
+print(f"weights: {MODEL} -> {snapshot_download(MODEL, allow_patterns=['*.json', '*.safetensors', '*.txt'])}")
 PY

@@ -36,7 +36,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 ## Contract items not started
 | # | Item | Serves | Status |
 |---|---|---|---|
-| 3.1 | Damage regions (VLM, cached) with class + metric extent | P2 | ✅ code + smoke; real run blocked on API key + staged damage (user) |
+| 3.1 | Damage regions (detector, cached) with class + metric extent | P2 | ✅ OWLv2 local default (E24, no key); recall needs staged damage |
 | 3.2 | Concealed-damage flags with fired rule; scope line items | P2 | ✅ |
 | 3.3 | Opening-width gate scorer; ceiling gate; repeatability table (`bench/gates.py`) | P2, D5 | 🟨 gates.py done; repeatability ✅ photos + video (3 live runs each, identical); door widths ⏸ tape |
 
@@ -59,5 +59,4 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 * ✖ Pro iPhone (LiDAR of our rooms + magicplan head-to-head): not available (user, 2026-10-03).
 * ✖ Public release of the home captures: declined (user, 2026-10-03).
 * ⏸ A protocol capture with doorway "look-through" photos (after 0.7).
-* Damage: no API key needed once the local detector (OWLv2) is the default; staged-damage photos would still be
-  needed to measure detection accuracy.
+* Damage: no API key needed (OWLv2 local default, E24); staged-damage photos would still be needed to measure recall.

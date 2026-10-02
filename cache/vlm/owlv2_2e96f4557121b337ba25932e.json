@@ -1,0 +1,6 @@
+{
+ "model": "google/owlv2-base-patch16-ensemble",
+ "prompt_version": "3",
+ "threshold": 0.25,
+ "detections": []
+}

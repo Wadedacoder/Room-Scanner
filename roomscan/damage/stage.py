@@ -2,8 +2,8 @@
 
 Every tier calls `room_damage` once per room with the views it already has (image, metric depth, depth-resolution K,
 gravity-aligned camera-to-world pose), then `finalize` once per plan. The detector is pluggable: `damage.backend`
-= vlm (Claude, detect_claude.py) | off. With no credentials the stage warns and reports no damage rather than failing,
-so geometry still ships.
+= owlv2 (local, detect_local.py; default, no key) | vlm (Claude, detect_claude.py) | off. If the detector is
+unavailable the stage warns and reports no damage rather than failing, so geometry still ships.
 """
 
 from __future__ import annotations
@@ -39,13 +39,23 @@ def room_damage(room: dict, images, depth: np.ndarray, K: np.ndarray, c2w: np.nd
     if abs(dw / dh - iw / ih) > 0.04 * iw / ih:  # DA3 rounds sizes to 14 px patches (504x280 for 16:9, E21)
         warnings.append(f"{room['id']}: depth aspect {dw}x{dh} differs from the image {iw}x{ih}; damage skipped")
         return []
+    min_conf = 0.5
     if detector is None:
-        from roomscan.damage import detect_claude as dc
+        backend = cfg["damage"]["backend"]
+        if backend == "owlv2":
+            from roomscan.damage import detect_local as det_mod
 
+            min_conf = 0.0  # OWLv2 boxes are already cut at damage.owlv2_threshold (raw scores, not probabilities)
+            unavailable = (ImportError,)
+        else:
+            from roomscan.damage import detect_claude as det_mod
+
+            unavailable = (det_mod.NoCredentials,)
         try:
-            raw, source = dc.detect_room(imgs, cfg, cache_root)
-        except dc.NoCredentials as e:
-            warnings.append(f"damage: detector unavailable ({str(e)[:120]}; set ANTHROPIC_API_KEY); damage, concealed "
+            raw, source = det_mod.detect_room(imgs, cfg, cache_root)
+        except unavailable as e:
+            hint = "pip install 'roomscan[ml]' transformers" if backend == "owlv2" else "set ANTHROPIC_API_KEY"
+            warnings.append(f"damage: {backend} detector unavailable ({str(e)[:120]}; {hint}); damage, concealed "
                             "flags and scope are empty for this run")
             cfg["damage"]["backend"] = "off"  # don't retry for every room
             return []
@@ -57,7 +67,7 @@ def room_damage(room: dict, images, depth: np.ndarray, K: np.ndarray, c2w: np.nd
     ceil = room.get("ceiling_height")
     ceiling_y = floor_y + ceil["value"] if ceil else None
     regions = []
-    for det in _to_view(raw, idx, (dh, dw), source):
+    for det in _to_view(raw, idx, (dh, dw), source, min_conf):
         i = det.view
         r = project_detection(det, depth[i], K[i], c2w[i], floor_y, ceiling_y, theta, room["walls"], room["id"])
         if r is None:
@@ -75,11 +85,11 @@ def room_damage(room: dict, images, depth: np.ndarray, K: np.ndarray, c2w: np.nd
     return _merge(regions)
 
 
-def _to_view(raw, idx, hw, source) -> list[Detection]:
+def _to_view(raw, idx, hw, source, min_conf: float = 0.5) -> list[Detection]:
     h, w = hw
     out = []
     for d in raw:
-        if d["image"] < 0 or d["image"] >= len(idx) or d["confidence"] < 0.5:
+        if d["image"] < 0 or d["image"] >= len(idx) or d["confidence"] < min_conf:
             continue
         box = (d["x0"] / 1000 * w, d["y0"] / 1000 * h, d["x1"] / 1000 * w, d["y1"] / 1000 * h)
         out.append(Detection(idx[d["image"]], d["class"], box, float(d["confidence"]), source))

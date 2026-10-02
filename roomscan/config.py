@@ -119,10 +119,14 @@ def _validate(cfg: dict) -> None:
         raise ConfigError("recon.photo_outline must be walls|box")
     if cfg["recon"]["video_matcher"] not in {"sequential", "exhaustive"}:
         raise ConfigError("recon.video_matcher must be sequential|exhaustive")
+    if cfg["recon"]["video_features"] not in {"sift", "disk_lightglue"}:
+        raise ConfigError("recon.video_features must be sift|disk_lightglue")
     if cfg["drift"]["method"] is False:  # YAML 1.1 reads a bare `off` as boolean false
         cfg["drift"]["method"] = "off"
     if cfg["drift"]["method"] not in {"off", "posegraph"}:
         raise ConfigError("drift.method must be off|posegraph")
+    if cfg["damage"]["backend"] not in {"owlv2", "vlm", "off"}:
+        raise ConfigError("damage.backend must be owlv2|vlm|off")
     if cfg["damage"]["cache"] not in {"replay", "live", "replay_or_live"}:
         raise ConfigError("damage.cache must be replay|live|replay_or_live")
 

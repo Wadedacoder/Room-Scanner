@@ -11,7 +11,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done · ❌ fails gate (repor
 | 5 | LiDAR tier (P1) | roomscan/pipeline/lidar.py | plan.json/svg, 5-room walk | ✅ (no tape for accuracy) |
 | 6 | Per-room walls, ceiling height, floor area, openings (P2) | roomscan/pipeline/backend.py, roomscan/openings/detect.py | plan.json rooms[] | ✅ (opening widths untaped) |
 | 7 | Stitched multi-room plan + adjacency (P2) | roomscan/pipeline/backend.py `_adjacency`, roomscan/stitch/photo_graph.py | plan.json `adjacency`, plan.svg | ✅ LiDAR · 🟨 photos 3/6 · ⬜ video |
-| 8 | Damage regions, class + metric extent (P2) | roomscan/damage/ (detect_claude.py, project.py, stage.py) | plan.json `damage` (cached VLM outputs in cache/vlm/) | 🟨 chain done + smoke; real run ⏸ API key + staged damage |
+| 8 | Damage regions, class + metric extent (P2) | roomscan/damage/ (detect_local.py OWLv2 default, detect_claude.py optional, project.py, stage.py) | plan.json `damage` (cached detector outputs in cache/vlm/) | 🟨 runs offline; 0 false positives on 17 clean photos (E24); recall unmeasured (no staged damage) |
 | 9 | Concealed-damage flags with fired rule (P2) | roomscan/scope/rules.yaml, engine.py | plan.json `concealed_flags[].rule_id` | ✅ (tests/test_damage_scope.py) |
 | 10 | Scope line items keyed to surfaces (P2) | roomscan/scope/ | plan.json `scope[].surface_id` + quantity interval | ✅ |
 | 11 | Interval on every measurement (P2) | roomscan/pipeline/backend.py `meas` | Measurement.lo/hi on every number | 🟨 propagated; calibration needs more tape |

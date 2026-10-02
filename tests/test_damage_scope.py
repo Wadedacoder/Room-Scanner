@@ -85,3 +85,32 @@ def test_missing_sdk_or_key_degrades_to_warning(monkeypatch):
     out = room_damage(room, [np.zeros((200, 200, 3), np.uint8)], depth[None], K[None], c2w[None], 0.0, 0.0, None,
                       cfg, "/nonexistent-cache", warns)
     assert out == [] and "detector unavailable" in warns[0] and cfg["damage"]["backend"] == "off"
+
+
+def test_owlv2_backend_unavailable_degrades_to_warning(monkeypatch):
+    import builtins
+
+    from roomscan.damage.stage import room_damage
+
+    real_import = builtins.__import__
+
+    def no_transformers(name, *a, **k):
+        if name == "transformers":
+            raise ImportError("no transformers")
+        return real_import(name, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", no_transformers)
+    K, depth, c2w, walls = _wall_view()
+    cfg = {"damage": {"backend": "owlv2", "keyframes_per_room": 4, "owlv2_threshold": 0.25, "cache": "live"},
+           "runtime": {"device": "cpu"}}
+    warns = []
+    out = room_damage({"id": "r", "walls": walls, "ceiling_height": None}, [np.zeros((200, 200, 3), np.uint8)],
+                      depth[None], K[None], c2w[None], 0.0, 0.0, None, cfg, "/nonexistent-cache", warns)
+    assert out == [] and "owlv2 detector unavailable" in warns[0]
+
+
+def test_owlv2_nms_keeps_best_of_overlapping_boxes():
+    from roomscan.damage.detect_local import _nms
+
+    boxes = np.array([[0, 0, 10, 10], [1, 1, 10, 10], [50, 50, 60, 60]], float)
+    assert _nms(boxes, np.array([0.3, 0.5, 0.4])) == [1, 2]
