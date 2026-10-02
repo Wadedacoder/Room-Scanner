@@ -104,5 +104,14 @@ def run(
     typer.echo(f"wrote {run_dir}/plan.json, plan.svg in {plan['capture']['runtime_s']} s")
 
 
+@app.command()
+def serve(port: int = typer.Option(8765, help="local port"), host: str = typer.Option("127.0.0.1")):
+    """Local test website: upload a capture, run it, compare with tape (http://localhost:8765)."""
+    from roomscan.web.server import serve as _serve
+
+    typer.echo(f"Room-Scanner test bench on http://{host}:{port}  (Ctrl+C to stop)")
+    _serve(host, port)
+
+
 if __name__ == "__main__":
     app()

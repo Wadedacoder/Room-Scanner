@@ -8,6 +8,21 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-02 · local test website · tag `v0.4.0`
+
+### Added
+- **`roomscan serve`: a local website for testing captures** (`roomscan/web/`). Upload a photo folder, video, Stray
+  Scanner folder or zip (pick or drag and drop); see the floor plan, each room's area, ceiling and wall lengths with
+  90% intervals, the pipeline's warnings and the run log; type tape values (pre-filled from the ground-truth sheet)
+  to get errors against the brief's per-tier gate and whether each interval holds the tape value.
+  - Why: the user asked to test captures themselves; the same page can serve as the walk-in demo screen.
+  - Safety: one job at a time, each in its own process under `scripts/run_guarded.sh` with the profile's GPU cap
+    (two concurrent photo runs would freeze an 8 GB Mac). Runs from the checkout's code, not a stale installed copy.
+  - History: every run is kept with its profile and pipeline version (`runs/web/jobs.json`, survives restarts).
+  - Checked: study photos uploaded through the API → photo tier ran (peak 1.8 GB), plan + SVG served; a video
+    upload fails with "pipeline for tier 'video' not implemented yet"; 5 tests for upload detection and the API.
+- `web` extra (fastapi, uvicorn, python-multipart).
+
 ### Added
 - Study tape readings assigned to walls (`bench/ground_truth/home_tape.yaml`): door wall 123 in, whiteboard wall
   130 in, cupboard wall 123 in, brown wall ~138 in (approximate), ceiling 108 in. Opposite pairs 312.4/312.4 cm and

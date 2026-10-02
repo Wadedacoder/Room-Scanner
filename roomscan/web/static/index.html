@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Room-Scanner Test Bench</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: drafting-sheet look shared with the project pages. Left column: new run + history; right: the result. */
+:root {
+  --paper: #f5f7f6; --sheet: #ffffff; --ink: #1d2a33; --muted: #5b6b75; --line: #d3dbdf;
+  --accent: #1f5d8c; --accent-ink: #ffffff; --mark: #b4531f; --chip: #eef3f6;
+  --ok: #2f7d4f; --warn: #a8701a; --bad: #b23a3a;
+  --display: "Barlow Semi Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #12181c; --sheet: #182127; --ink: #e3eaee; --muted: #9db0bb; --line: #2c3a43;
+    --accent: #7db7e3; --accent-ink: #0d1a24; --mark: #e8935e; --chip: #1f2b33;
+    --ok: #6cc28f; --warn: #e0b25c; --bad: #ec8080; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 var(--body); padding: 24px 16px 64px; }
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 24px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; }
+h1 { font: 700 2rem/1.1 var(--display); margin: 0; }
+h2 { font: 600 1.3rem/1.2 var(--display); margin: 0; }
+.meta { font-family: var(--mono); font-size: .8rem; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
+.grid { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: 24px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.eyebrow { font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.drop { border: 2px dashed var(--line); border-radius: 8px; padding: 16px; text-align: center; color: var(--muted); }
+.drop.over { border-color: var(--accent); color: var(--accent); }
+.pick { display: grid; grid-template-columns: 1fr; gap: 8px; }
+button, .btn { font: 600 .95rem var(--body); border-radius: 6px; border: 1px solid var(--line); background: var(--chip);
+  color: var(--ink); padding: 8px 12px; cursor: pointer; text-align: left; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); text-align: center; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+label { font-size: .85rem; color: var(--muted); display: grid; gap: 4px; }
+select, input[type=text], input[type=number] { font: 1rem var(--body); padding: 6px 8px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink); width: 100%; }
+.selected { font-family: var(--mono); font-size: .8rem; color: var(--ink); word-break: break-all; }
+.jobs { display: grid; gap: 6px; max-height: 420px; overflow: auto; }
+.job { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--paper); cursor: pointer; text-align: left; }
+.job.active { border-color: var(--accent); }
+.job .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.job .s { font-family: var(--mono); font-size: .72rem; color: var(--muted); grid-column: 1 / -1; }
+.pill { font-family: var(--mono); font-size: .7rem; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.pill.done { color: var(--ok); } .pill.running, .pill.queued { color: var(--warn); } .pill.failed, .pill.interrupted { color: var(--bad); }
+.plan { background: #ffffff; border-radius: 8px; border: 1px solid var(--line); overflow: auto; max-height: 560px; }
+.plan img { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--chip); }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.good { color: var(--ok); font-weight: 600; } .badv { color: var(--bad); font-weight: 600; } .warnv { color: var(--warn); font-weight: 600; }
+ul.warnings { margin: 0; padding-left: 1.1em; color: var(--muted); font-size: .9rem; }
+pre.log { font-family: var(--mono); font-size: .75rem; background: var(--paper); border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px; max-height: 260px; overflow: auto; white-space: pre-wrap; margin: 0; }
+.tape { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.empty { color: var(--muted); }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Room-Scanner Test Bench</h1>
+    <div class="meta" id="meta">connecting…</div>
+  </header>
+
+  <div class="grid">
+    <div style="display:grid; gap:24px">
+      <section class="card" aria-labelledby="new-h">
+        <h2 id="new-h">New run</h2>
+        <div class="drop" id="drop">Drop a capture here, or choose one:</div>
+        <div class="pick">
+          <button id="b-photos" type="button">Photo folder (one sub-folder per room)</button>
+          <button id="b-video" type="button">Video file (.MOV / .mp4)</button>
+          <button id="b-stray" type="button">Stray Scanner folder (LiDAR)</button>
+          <button id="b-zip" type="button">Stray Scanner .zip</button>
+        </div>
+        <input id="f-photos" type="file" webkitdirectory multiple hidden>
+        <input id="f-video" type="file" accept=".mov,.mp4,.m4v,video/*" hidden>
+        <input id="f-stray" type="file" webkitdirectory multiple hidden>
+        <input id="f-zip" type="file" accept=".zip" hidden>
+        <div class="selected" id="selected">Nothing selected.</div>
+        <label>Name for this run <input id="label" type="text" placeholder="e.g. study, 8 photos 0.5x"></label>
+        <label>Hardware profile <select id="profile"></select></label>
+        <button class="primary" id="run" type="button" disabled>Run pipeline</button>
+        <div class="eyebrow">Runs one at a time, under a memory cap</div>
+      </section>
+
+      <section class="card" aria-labelledby="hist-h">
+        <h2 id="hist-h">History</h2>
+        <div class="jobs" id="jobs"><span class="empty">No runs yet.</span></div>
+      </section>
+    </div>
+
+    <section class="card" id="result" aria-live="polite">
+      <h2>Result</h2>
+      <p class="empty">Choose a capture and run it, or open a past run from the history.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let chosen = null;      // {files: File[], paths: string[], kind}
+let current = null;     // job id shown on the right
+let info = null;
+let pollTimer = null;
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  return r.json();
+}
+
+function fmtM(m, unit, digits = 2) {
+  if (!m) return "not observed";
+  const half = (m.hi - m.lo) / 2;
+  return `${m.value.toFixed(digits)} ± ${half.toFixed(digits)} ${unit}`;
+}
+
+function setChosen(files, kind) {
+  files = Array.from(files).filter(f => !f.name.startsWith("."));
+  if (!files.length) return;
+  const paths = files.map(f => f.webkitRelativePath || f.name);
+  chosen = { files, paths, kind };
+  const top = [...new Set(paths.map(p => p.split("/")[0]))];
+  const mb = files.reduce((s, f) => s + f.size, 0) / 1e6;
+  $("selected").textContent = `${kind}: ${files.length} file${files.length > 1 ? "s" : ""} (${mb.toFixed(1)} MB) · ${top.slice(0, 3).join(", ")}${top.length > 3 ? "…" : ""}`;
+  if (!$("label").value) $("label").value = top[0] || files[0].name;
+  $("run").disabled = false;
+}
+
+for (const [b, f, kind] of [["b-photos", "f-photos", "photos"], ["b-video", "f-video", "video"],
+                            ["b-stray", "f-stray", "LiDAR"], ["b-zip", "f-zip", "LiDAR zip"]]) {
+  $(b).onclick = () => $(f).click();
+  $(f).onchange = (e) => setChosen(e.target.files, kind);
+}
+
+// drag and drop: folders via webkitGetAsEntry
+const drop = $("drop");
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = async (e) => {
+  e.preventDefault(); drop.classList.remove("over");
+  const out = [];
+  async function walk(entry, prefix) {
+    if (entry.isFile) {
+      const file = await new Promise((res, rej) => entry.file(res, rej));
+      Object.defineProperty(file, "webkitRelativePath", { value: prefix + file.name });
+      out.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      let batch;
+      do {
+        batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+        for (const ch of batch) await walk(ch, prefix + entry.name + "/");
+      } while (batch.length);
+    }
+  }
+  for (const item of e.dataTransfer.items) {
+    const entry = item.webkitGetAsEntry && item.webkitGetAsEntry();
+    if (entry) await walk(entry, "");
+  }
+  if (out.length) setChosen(out, "dropped");
+};
+
+$("run").onclick = async () => {
+  if (!chosen) return;
+  $("run").disabled = true;
+  $("run").textContent = "Uploading…";
+  const fd = new FormData();
+  chosen.files.forEach(f => fd.append("files", f, f.name));
+  fd.append("paths", JSON.stringify(chosen.paths));
+  fd.append("profile", $("profile").value);
+  fd.append("label", $("label").value);
+  try {
+    const { id } = await api("/api/jobs", { method: "POST", body: fd });
+    chosen = null; $("selected").textContent = "Nothing selected."; $("label").value = "";
+    await loadJobs(); show(id);
+  } catch (err) {
+    $("selected").textContent = `Upload failed: ${err.message}`;
+  } finally {
+    $("run").textContent = "Run pipeline";
+  }
+};
+
+async function loadJobs() {
+  const jobs = await api("/api/jobs");
+  const box = $("jobs");
+  if (!jobs.length) { box.innerHTML = '<span class="empty">No runs yet.</span>'; return; }
+  box.innerHTML = "";
+  for (const j of jobs) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "job" + (j.id === current ? " active" : "");
+    const when = new Date(j.created * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    b.innerHTML = `<span class="t"></span><span class="pill ${j.status}">${j.status}</span>
+      <span class="s">${when} · ${j.tier || "?"} · ${j.profile} · v${j.pipeline_version}</span>`;
+    b.querySelector(".t").textContent = j.label;
+    b.onclick = () => show(j.id);
+    box.appendChild(b);
+  }
+}
+
+function extents(poly) {
+  const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+  return [Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)].sort((a, b) => a - b);
+}
+
+function gtFor(roomId) {
+  const gt = info && info.ground_truth;
+  if (!gt) return null;
+  const r = (gt.rooms || []).find(x => x.id === roomId || roomId.startsWith(x.id));
+  if (!r || !r.walls) return null;
+  const L = r.walls.map(w => w.length_cm && w.length_cm[0]).filter(v => v != null);
+  if (L.length < 4) return null;
+  // walls listed going round the room: opposite pairs are (w1, w3) and (w2, w4)
+  const a = (L[0] + L[2]) / 2, b = (L[1] + L[3]) / 2;
+  return { short: Math.min(a, b), long: Math.max(a, b), ceil: r.ceiling_height_cm ? r.ceiling_height_cm[0] : null };
+}
+
+function errCell(pred, truth, tolPct) {
+  if (truth == null || truth === "" || isNaN(truth)) return "<td class='n'>–</td>";
+  const e = 100 * (pred - truth) / truth;
+  const cls = Math.abs(e) <= tolPct ? "good" : (Math.abs(e) <= 2 * tolPct ? "warnv" : "badv");
+  return `<td class="n ${cls}">${e > 0 ? "+" : ""}${e.toFixed(1)}%</td>`;
+}
+
+function renderTape(plan, el) {
+  const room = plan.rooms[0];
+  const g = room ? gtFor(room.id) : null;
+  el.innerHTML = `
+    <div class="eyebrow">Compare with tape (first room)</div>
+    <div class="tape">
+      <label>Short side (cm)<input id="t-short" type="number" step="0.1" value="${g ? g.short.toFixed(1) : ""}"></label>
+      <label>Long side (cm)<input id="t-long" type="number" step="0.1" value="${g ? g.long.toFixed(1) : ""}"></label>
+      <label>Ceiling (cm)<input id="t-ceil" type="number" step="0.1" value="${g && g.ceil ? g.ceil : ""}"></label>
+    </div>
+    <div class="eyebrow">${g ? "Pre-filled from bench/ground_truth/home_tape.yaml (opposite walls averaged)" : "Type tape values to score this run"}</div>
+    <div class="tablewrap" id="t-out"></div>`;
+  const tol = plan.capture.tier === "lidar" ? 1 : plan.capture.tier === "video" ? 3 : 8;
+  const update = () => {
+    if (!room) return;
+    const [s, l] = extents(room.polygon);
+    const ts = parseFloat($("t-short").value) / 100, tl = parseFloat($("t-long").value) / 100;
+    const tc = parseFloat($("t-ceil").value) / 100;
+    const ta = (ts && tl) ? ts * tl : NaN;
+    const a = room.floor_area, c = room.ceiling_height;
+    const inside = (m, t) => (m && !isNaN(t)) ? (m.lo <= t && t <= m.hi ? "<span class='good'>yes</span>" : "<span class='badv'>no</span>") : "–";
+    $("t-out").innerHTML = `<table><thead><tr><th>Quantity</th><th>Pipeline</th><th>Tape</th><th>Error</th><th>Interval holds tape?</th></tr></thead><tbody>
+      <tr><td>Short side</td><td class="n">${s.toFixed(3)} m</td><td class="n">${isNaN(ts) ? "–" : ts.toFixed(3) + " m"}</td>${errCell(s, ts, tol)}<td>–</td></tr>
+      <tr><td>Long side</td><td class="n">${l.toFixed(3)} m</td><td class="n">${isNaN(tl) ? "–" : tl.toFixed(3) + " m"}</td>${errCell(l, tl, tol)}<td>–</td></tr>
+      <tr><td>Floor area</td><td class="n">${fmtM(a, "m²")}</td><td class="n">${isNaN(ta) ? "–" : ta.toFixed(2) + " m²"}</td>${errCell(a.value, ta, 2 * tol)}<td>${inside(a, ta)}</td></tr>
+      <tr><td>Ceiling</td><td class="n">${fmtM(c, "m", 3)}</td><td class="n">${isNaN(tc) ? "–" : tc.toFixed(3) + " m"}</td>${c ? errCell(c.value, tc, tol) : "<td class='n'>–</td>"}<td>${inside(c, tc)}</td></tr>
+    </tbody></table>
+    <div class="eyebrow">Green = inside the brief's gate for this tier (±${tol}% lengths), amber = within 2×, red = beyond</div>`;
+  };
+  ["t-short", "t-long", "t-ceil"].forEach(id => $(id).oninput = update);
+  update();
+}
+
+async function show(id) {
+  current = id;
+  clearTimeout(pollTimer);
+  const j = await api(`/api/jobs/${id}`);
+  loadJobs();
+  const el = $("result");
+  const head = `<h2></h2><div class="row"><span class="pill ${j.status}">${j.status}</span>
+    <span class="meta">${j.tier || ""} · profile ${j.profile} · pipeline v${j.pipeline_version} · ${j.n_files} files${
+      j.finished && j.started ? ` · ${Math.round(j.finished - j.started)} s` : ""}</span></div>`;
+  if (j.status === "queued" || j.status === "running") {
+    el.innerHTML = head + `<pre class="log">${(j.log_tail || "waiting for the previous run to finish…").replace(/</g, "&lt;")}</pre>`;
+    el.querySelector("h2").textContent = j.label;
+    pollTimer = setTimeout(() => show(id), 2000);
+    return;
+  }
+  if (j.status !== "done") {
+    el.innerHTML = head + `<p class="badv"></p><details><summary>Log</summary><pre class="log">${(j.log_tail || "").replace(/</g, "&lt;")}</pre></details>`;
+    el.querySelector("h2").textContent = j.label;
+    el.querySelector("p").textContent = j.error || "The run did not finish.";
+    return;
+  }
+  const plan = j.plan_json;
+  const rows = plan.rooms.map(r => `<tr><td></td><td class="n">${fmtM(r.floor_area, "m²")}</td>
+      <td class="n">${fmtM(r.ceiling_height, "m", 3)}</td>
+      <td class="n">${r.walls.map(w => w.length.value.toFixed(2)).join(" · ")} m</td></tr>`).join("");
+  el.innerHTML = head + `
+    <div class="plan"><img alt="Floor plan" src="/api/jobs/${id}/plan.svg?t=${j.finished}"></div>
+    <div class="row"><span class="meta">Footprint ${fmtM(plan.property.footprint_area, "m²")} · ${plan.rooms.length} room(s)</span>
+      <a class="btn" href="/api/jobs/${id}/plan.json">Download plan.json</a></div>
+    <div class="tablewrap"><table><thead><tr><th>Room</th><th>Floor area (90%)</th><th>Ceiling (90%)</th><th>Walls</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div class="card" id="tape" style="padding:12px"></div>
+    <div><div class="eyebrow">Warnings from the pipeline</div><ul class="warnings">${plan.warnings.map(w => `<li></li>`).join("")}</ul></div>
+    <details><summary>Run log</summary><pre class="log"></pre></details>`;
+  el.querySelector("h2").textContent = j.label;
+  el.querySelectorAll("tbody tr td:first-child").forEach((td, i) => td.textContent = plan.rooms[i].label);
+  el.querySelectorAll("ul.warnings li").forEach((li, i) => li.textContent = plan.warnings[i]);
+  el.querySelector("pre.log").textContent = j.log_tail || "";
+  renderTape(plan, $("tape"));
+}
+
+(async () => {
+  info = await api("/api/info");
+  $("meta").innerHTML = `<span>pipeline v${info.version}</span><span>${info.hardware}</span><span>auto profile: ${info.auto_profile}</span>`;
+  $("profile").innerHTML = `<option value="auto">auto (${info.auto_profile})</option>` +
+    info.profiles.map(p => `<option value="${p}">${p}</option>`).join("");
+  await loadJobs();
+  const jobs = await api("/api/jobs");
+  if (jobs.length) show(jobs[0].id);
+})();
+</script>
+</body>
+</html>

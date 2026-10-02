@@ -18,6 +18,18 @@ Phone capture (photos, video or LiDAR) in, then a dimensioned, stitched floor pl
 
 Tier is auto-detected: a Stray Scanner folder means LiDAR, a `.MOV`/`.mp4` file means video, and a folder of per-room photo folders means photos.
 
+## Test it yourself (local website)
+
+```bash
+EXTRAS=geo,web,dev ./scripts/setup.sh && ./scripts/setup_models.sh   # once
+.venv/bin/roomscan serve                                              # then open http://localhost:8765
+```
+
+Drop a capture on the page: a folder with one sub-folder of photos per room, a video, or a Stray Scanner folder or
+zip. The page shows the plan, every measurement with its 90% interval, the pipeline's warnings, and a comparison
+with tape values you type in (pre-filled from `bench/ground_truth/home_tape.yaml` when the room name matches).
+Runs go one at a time through the memory watchdog; history and outputs are kept in `runs/web/`.
+
 ## Hardware profiles
 
 The pipeline picks a profile for the machine it runs on. Stronger machines get larger models, more views per pass and finer voxels.
