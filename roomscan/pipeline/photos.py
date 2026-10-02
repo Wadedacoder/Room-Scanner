@@ -34,7 +34,7 @@ def reconstruct_room(model: LearnedRecon, photos):
     G = gravity_align(pts, rec.c2w)
     pts = [P @ G.T for P in pts]
     cams = cams @ G.T
-    return rec, pts, cams
+    return rec, pts, cams, G
 
 
 def run_photos(path: Path, cfg) -> tuple[dict, dict]:
@@ -45,11 +45,20 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
     warnings, debug = [], {}
     x_cursor, total_area, total_var = 0.0, 0.0, 0.0
     for name, photos in capture.items():
-        rec, pts, cams = reconstruct_room(model, photos)
+        rec, pts, cams, Gr = reconstruct_room(model, photos)
         P = voxelize(np.concatenate(pts), VOXEL)
         floor = find_levels(P, float(np.median(cams[:, 1]))).floor
         rays = wall_rays(pts, cams, floor)
+        # doorways: views INTO the next room are low-confidence depth, which the 30th-percentile filter removes
+        # (E15: max distance 2.7 m with it, 6.6 m without), so openings get their own lightly filtered points
+        far_pts, _ = backproject(rec, conf_pct=5)
+        far_pts = [Q @ Gr.T for Q in far_pts]
+        sl_rng = np.random.default_rng(0)
+        sl = [(np.repeat(c[None, [0, 2]], min(len(Q), 20000), 0), Q[sel][:, [0, 2]], Q[sel][:, 1])
+              for c, Q in zip(cams, far_pts) for sel in [sl_rng.choice(len(Q), min(len(Q), 20000), replace=False)]]
+        sightlines = tuple(np.concatenate([x[i] for x in sl]) for i in range(3))
         res = rooms_from_cloud(P, cams, rays, PHOTO_ERR, VOXEL, split=False, id_prefix=name, label=name,
+                               sightlines=sightlines,
                                interior_mode=cfg["recon"]["photo_outline"])  # sparse views can't carve (E6)
         warnings += res.warnings
         debug[name] = {"scale": rec.scale, "focal_pred_err": rec.focal_pred_err, "n_photos": len(photos),

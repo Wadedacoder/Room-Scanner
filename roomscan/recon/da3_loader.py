@@ -25,3 +25,12 @@ def load_da3_class():
     from depth_anything_3.api import DepthAnything3
 
     return DepthAnything3
+
+
+def load_pretrained(cls, repo: str):
+    """Local copy first: a run must not depend on the network once weights are downloaded (scripts/setup_models.sh).
+    E15: a Hugging Face "Server disconnected" mid-run killed a photo-tier job although every weight was cached."""
+    try:
+        return cls.from_pretrained(repo, local_files_only=True)
+    except Exception:  # noqa: BLE001  (not cached yet: download once)
+        return cls.from_pretrained(repo)

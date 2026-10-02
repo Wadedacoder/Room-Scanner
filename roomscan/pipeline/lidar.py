@@ -6,7 +6,7 @@ import time
 
 import numpy as np
 
-from roomscan.geometry.cloud import find_levels, fuse, wall_band_rays
+from roomscan.geometry.cloud import find_levels, fuse, sightline_sample, wall_band_rays
 from roomscan.io.stray import StrayCapture
 from roomscan.pipeline.backend import LIDAR_ERR, empty_plan, rooms_from_cloud
 
@@ -29,7 +29,8 @@ def run_lidar(path, cfg) -> tuple[dict, dict]:
     floor = find_levels(P, float(np.median(cam[:, 1]))).floor
     # carving only needs coverage, not density: ~150 rays from every 3rd fused frame keeps it to seconds
     rays = wall_band_rays(cap, lc["frame_stride"] * 3, floor, max_depth=lc["max_depth_m"], per_frame=150)
-    res = rooms_from_cloud(P, cam, rays, LIDAR_ERR, lc["voxel_m"], split=True)
+    sightlines = sightline_sample(cap, lc["frame_stride"] * 3, max_depth=lc["max_depth_m"])
+    res = rooms_from_cloud(P, cam, rays, LIDAR_ERR, lc["voxel_m"], split=True, sightlines=sightlines)
     timing["geometry"] = time.time() - t0
 
     plan = empty_plan("lidar", str(path))

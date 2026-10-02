@@ -29,10 +29,12 @@ class SfmResult:
     n_frames: int
 
 
-def run_sfm(frames_dir: Path, names: list[str], focal_guess: float, work: Path) -> SfmResult:
+def run_sfm(frames_dir: Path, names: list[str], focal_guess: float, work: Path, matcher: str = "sequential",
+            overlap: int = 10) -> SfmResult:
     work.mkdir(parents=True, exist_ok=True)
     out = work / "sfm.json"
-    cmd = [sys.executable, "-m", "roomscan.recon.sfm", str(frames_dir), str(work), str(focal_guess), json.dumps(names)]
+    cmd = [sys.executable, "-m", "roomscan.recon.sfm", str(frames_dir), str(work), str(focal_guess), json.dumps(names),
+           matcher, str(overlap)]
     subprocess.run(cmd, check=True, capture_output=True, text=True)
     d = json.loads(out.read_text())
     return SfmResult({k: np.array(v) for k, v in d["c2w"].items()}, np.array(d["points"]).reshape(-1, 3),
@@ -40,16 +42,22 @@ def run_sfm(frames_dir: Path, names: list[str], focal_guess: float, work: Path) 
                      np.array(d["K"]), d["pieces"], len(names))
 
 
-def _child(frames_dir: str, work: str, focal_guess: str, names_json: str) -> None:
+def _child(frames_dir: str, work: str, focal_guess: str, names_json: str, matcher: str = "sequential",
+           overlap: str = "10") -> None:
     import shutil
 
     import pycolmap
 
+    # Determinism (E10): with default threading and seeds, two runs of the same video tracked 92 vs 65 frames and gave
+    # -3.4% vs -33.5% area. Fixed seed + single-threaded mapping makes reruns identical.
+    pycolmap.set_random_seed(0)
     names = json.loads(names_json)
     work_p = Path(work)
     db = work_p / "database.db"
-    if db.exists():
-        db.unlink()
+    # A run killed mid-write leaves SQLite's -wal/-shm side files; with only database.db removed, COLMAP then fails to
+    # open a fresh database ("No registered database factory succeeded"). Remove all three.
+    for f in (db, work_p / "database.db-wal", work_p / "database.db-shm"):
+        f.unlink(missing_ok=True)
     shutil.rmtree(work_p / "sparse", ignore_errors=True)
     from PIL import Image
 
@@ -57,19 +65,40 @@ def _child(frames_dir: str, work: str, focal_guess: str, names_json: str) -> Non
     reader = pycolmap.ImageReaderOptions()
     reader.camera_model = "SIMPLE_RADIAL"
     reader.camera_params = f"{float(focal_guess)},{w / 2},{h / 2},0"
+    ext = pycolmap.FeatureExtractionOptions()
+    ext.num_threads = 1  # parallel extraction writes features in a varying order -> different reconstructions
     pycolmap.extract_features(db, frames_dir, image_names=names, camera_mode=pycolmap.CameraMode.SINGLE,
-                              reader_options=reader, device=pycolmap.Device.cpu)
-    pair = pycolmap.SequentialPairingOptions()
-    pair.overlap = 10
-    if hasattr(pair, "loop_detection"):
-        pair.loop_detection = False  # needs a vocabulary tree file; drift is handled downstream
-    pycolmap.match_sequential(db, pairing_options=pair, device=pycolmap.Device.cpu)
-    opts = pycolmap.IncrementalPipelineOptions()
-    for k, v in (("ba_refine_focal_length", True), ("ba_refine_principal_point", False),
-                 ("ba_refine_extra_params", True)):
-        if hasattr(opts, k):
-            setattr(opts, k, v)
-    maps = pycolmap.incremental_mapping(db, frames_dir, work_p / "sparse", options=opts)
+                              reader_options=reader, extraction_options=ext, device=pycolmap.Device.cpu)
+    mopt = pycolmap.FeatureMatchingOptions()
+    mopt.num_threads = 1
+    if matcher == "exhaustive":
+        pycolmap.match_exhaustive(db, matching_options=mopt, device=pycolmap.Device.cpu)
+    else:
+        pair = pycolmap.SequentialPairingOptions()
+        pair.overlap = int(overlap)
+        if hasattr(pair, "loop_detection"):
+            pair.loop_detection = False  # needs a vocabulary tree file
+        pycolmap.match_sequential(db, matching_options=mopt, pairing_options=pair, device=pycolmap.Device.cpu)
+    # The mapper is very sensitive to its starting pair: one random run tracked 190 frames, another 99 (E10). Matching
+    # is done once; mapping is tried with a few FIXED seeds and the reconstruction that tracks the most frames wins.
+    # Same input -> same seeds -> same result.
+    best = None
+    for seed in (0, 1, 2, 3):
+        pycolmap.set_random_seed(seed)
+        opts = pycolmap.IncrementalPipelineOptions()
+        opts.random_seed = seed
+        opts.num_threads = 1
+        for k, v in (("ba_refine_focal_length", True), ("ba_refine_principal_point", False),
+                     ("ba_refine_extra_params", True)):
+            if hasattr(opts, k):
+                setattr(opts, k, v)
+        out_dir = work_p / "sparse" / f"seed{seed}"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        maps = pycolmap.incremental_mapping(db, frames_dir, out_dir, options=opts)
+        if maps and (best is None or max(r.num_reg_images() for r in maps.values()) >
+                     max(r.num_reg_images() for r in best.values())):
+            best = maps
+    maps = best
     if not maps:
         raise SystemExit("COLMAP registered no frames")
     ranked = sorted(maps.values(), key=lambda r: r.num_reg_images(), reverse=True)
@@ -100,4 +129,4 @@ def _child(frames_dir: str, work: str, focal_guess: str, names_json: str) -> Non
 
 
 if __name__ == "__main__":
-    _child(*sys.argv[1:5])
+    _child(*sys.argv[1:7])

@@ -9,6 +9,28 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 ## [Unreleased]
 
 ### Added
+- **Door / window detection** (`roomscan/openings/detect.py`): openings are wall stretches the camera saw through
+  (points beyond the wall line, ray crossing the gap); door if the see-through reaches the floor, window above a sill.
+  Openings land in `plan.json` and are drawn in the SVG. Checked: LiDAR `c00a170fe1` finds the corridor–bathroom door
+  from both rooms at the same place (0.60 / 0.65 m); a synthetic 0.9 m door test passes. Photo rooms: none found yet
+  (E15, in progress).
+- **Cross-room photo matching** experiment (E14): DISK + LightGlue finds the real kitchen↔living link (89 matches) and
+  bathroom↔living (47); SIFT can't (≤ 44, noise level). `kornia` added for it.
+- `scripts/healthcheck.sh` (tests, website, memory, stuck jobs, disk, git, offline weights), run every 30 min by a
+  session watch; `docs/BACKLOG.md`: everything still required, prioritised.
+- Video tracking settings `recon.video_fps`, `recon.video_matcher`, `recon.video_seq_overlap`.
+
+### Changed
+- **Video tracking is now repeatable:** COLMAP with a fixed seed and single-threaded extraction, matching and mapping.
+  Before, the same video gave 92 vs 65 tracked frames and −3.4% vs −33.5% area; now two runs are identical (100 frames,
+  area +2.3%). Best-of-4-seeds mapping is in the code but NOT yet verified (runs were interrupted).
+- Models load from the local copy first (`load_pretrained`); a Hugging Face disconnect mid-run killed a photo job
+  although every weight was cached.
+
+### Fixed
+- COLMAP child cleans SQLite's -wal/-shm files left by an interrupted run ("No registered database factory").
+
+### Added
 - `recon.photo_outline` option (`walls` default | `box`): the box rule (outermost long wall lines) was tested in E13
   and rejected (study area +7.7%, bedroom collapsed); kept only for future experiments.
 - `bench/local/e13_walls.py`: top-down diagnosis of photo-tier rooms (wall points, cameras, outline, wall support).

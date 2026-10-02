@@ -64,10 +64,12 @@ class BackendResult:
 
 def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, voxel: float,
                      split: bool = True, id_prefix: str = "r", label: str | None = None,
-                     interior_mode: str = "carve") -> BackendResult:
+                     interior_mode: str = "carve", sightlines=None) -> BackendResult:
     """P: (N,3) world points, +Y up, metres. cam_xyz: camera centres. rays: (start_xz, end_xz) for carving.
 
     split=False treats everything as ONE room (photo tier: each folder is one room by protocol).
+    sightlines: optional (cam_xz, pt_xz, pt_y) samples (world frame) used to find doors/windows: points the camera saw
+    through a wall line.
     """
     lev = find_levels(P, float(np.median(cam_xyz[:, 1])))
     # Plausibility (E12): a handheld phone is 1.0-1.95 m above the floor. Outside that, the "floor" is a furniture top
@@ -132,8 +134,22 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
         if not floor_ok:
             warnings.append(f"{rid}: floor not found reliably (camera {cam_h:.2f} m above it; a handheld phone is "
                             f"1.0-1.95 m), so no ceiling height is reported")
+        openings = []
+        if sightlines is not None:
+            from roomscan.openings.detect import detect_openings
+
+            c_uv, p_uv, p_y = sightlines[0] @ R.T, sightlines[1] @ R.T, sightlines[2] - lev.floor
+            tol = (0.08, 0.25) if err.rel == 0 else (0.20, 0.40)  # LiDAR vs learned-depth walls (E15)
+            for j, o in enumerate(detect_openings(poly, p_uv, p_y, c_uv, wall_tol=tol[0], beyond_min=tol[1])):
+                w_sig = float(np.sqrt(2 * (0.025 + err.abs_m) ** 2 + (err.rel * o.width) ** 2))  # +-half a slot per jamb
+                openings.append({"id": f"{rid}.o{j + 1}", "wall_id": f"{rid}.w{o.wall + 1}",
+                                 "type": o.kind, "width": meas(o.width, w_sig, "m"),
+                                 "offset_along_wall": meas(o.offset, w_sig, "m"),
+                                 "sill_height": meas(max(o.sill, 0.0), 0.05, "m"), "connects_to": None,
+                                 "detection_confidence": round(min(1.0, o.support / 200), 2),
+                                 "centre_plan": list(o.centre_uv)})
         room = {"id": rid, "label": label or f"room {k + 1}", "polygon": poly.round(4).tolist(), "walls": walls,
-                "openings": [], "floor_area": meas(area, area_sig, "m2"),
+                "openings": openings, "floor_area": meas(area, area_sig, "m2"),
                 "perimeter": meas(perim, float(np.sqrt(perim_var)), "m")}
         if ceil is None:
             room["ceiling_height"] = None

@@ -36,6 +36,22 @@ def render_svg(plan: dict, px_per_m: float = 80.0, margin: float = 1.0) -> str:
                 ang += 180
             out.append(f'<text x="{mx:.1f}" y="{my:.1f}" font-size="11" fill="#333" text-anchor="middle" '
                        f'transform="rotate({ang:.1f} {mx:.1f} {my:.1f}) translate(0 -5)">{w["length"]["value"]:.2f}</text>')
+        walls_by_id = {w["id"]: w for w in r["walls"]}
+        for o in r.get("openings", []):
+            w = walls_by_id.get(o["wall_id"])
+            if not w:
+                continue
+            a, b = np.array(w["start"]), np.array(w["end"])
+            u = (b - a) / max(np.linalg.norm(b - a), 1e-9)
+            p0 = a + u * o["offset_along_wall"]["value"]
+            p1 = p0 + u * o["width"]["value"]
+            (x0, y0), (x1, y1) = xy(p0), xy(p1)
+            col = {"window": "#4C78A8", "door": "#B4531F"}.get(o["type"], "#54A24B")
+            out.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="#ffffff" stroke-width="5"/>')
+            out.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="{col}" stroke-width="2" '
+                       f'stroke-dasharray="4 3"/>')
+            out.append(f'<text x="{(x0 + x1) / 2:.1f}" y="{(y0 + y1) / 2 - 7:.1f}" font-size="10" text-anchor="middle" '
+                       f'fill="{col}">{o["type"]} {o["width"]["value"]:.2f}</text>')
         cx, cy = xy(np.mean(r["polygon"], axis=0))
         ceil = _fmt(r.get("ceiling_height"))
         out.append(f'<text x="{cx:.1f}" y="{cy:.1f}" font-size="14" font-weight="bold" text-anchor="middle" fill="{c}">'

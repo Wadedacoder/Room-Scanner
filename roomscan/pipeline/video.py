@@ -20,7 +20,6 @@ from roomscan.recon.learned import gravity_align, voxelize
 from roomscan.recon.sfm import run_sfm
 
 VOXEL = 0.03
-SFM_FPS = 8.0
 SFM_LONG_SIDE = 960
 
 
@@ -37,7 +36,9 @@ def metric_depths(cfg, images: list[np.ndarray], f_px: float):
     frac = float(cfg["runtime"].get("gpu_memory_fraction", 0.0) or 0.0)
     if dev == "mps" and frac > 0:
         torch.mps.set_per_process_memory_fraction(frac)
-    model = load_da3_class().from_pretrained(models.get(cfg["recon"]["metric_model"]).hf_repo).to(dev).eval()
+    from roomscan.recon.da3_loader import load_pretrained
+
+    model = load_pretrained(load_da3_class(), models.get(cfg["recon"]["metric_model"]).hf_repo).to(dev).eval()
     out = []
     with torch.inference_mode():
         for img in images:
@@ -55,10 +56,11 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     info = probe(path)
     work = Path(cfg["runtime"]["cache_dir"]) / "video" / Path(path).stem
     frames_dir = work / "frames"
-    names = extract_frames(path, frames_dir, SFM_FPS, SFM_LONG_SIDE)
+    rc = cfg["recon"]
+    names = extract_frames(path, frames_dir, rc["video_fps"], SFM_LONG_SIDE)
     w, h = Image.open(frames_dir / names[0]).size
     f_guess = (max(w, h) / 2) / np.tan(np.radians(FOV_1X_DEG / 2))
-    sfm = run_sfm(frames_dir, names, f_guess, work)
+    sfm = run_sfm(frames_dir, names, f_guess, work, rc["video_matcher"], rc["video_seq_overlap"])
     t_sfm = time.time() - t0
     reg = sorted(sfm.c2w)
     f_px = float(sfm.K[0, 0])
@@ -125,7 +127,9 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
                         "video": {"duration_s": round(info.duration_s, 1), "hdr": info.hdr, "frames": len(names),
                                   "registered": len(reg), "pieces": sfm.pieces[:5], "keyframes": len(keys),
                                   "focal_px": round(f_px, 1), "fov_deg": round(fov, 1), "lens_estimate": lens,
-                                  "metric_scale_spread": round(scale_spread, 3), "sfm_s": round(t_sfm, 1)}}
+                                  "metric_scale_spread": round(scale_spread, 3), "sfm_s": round(t_sfm, 1),
+                                  "sfm": {"fps": rc["video_fps"], "matcher": rc["video_matcher"],
+                                          "overlap": rc["video_seq_overlap"]}}}
     warns = list(res.warnings)
     if coverage < 0.8:
         warns.append(f"camera tracking covered only {coverage:.0%} of the video ({len(sfm.pieces)} pieces); "

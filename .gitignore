@@ -35,3 +35,8 @@ xcuserdata/
 *.ipa
 *.dSYM
 .build/
+
+# Model-output checkpoints and extracted video frames (regenerable; can be large)
+cache/
+# Other Claude sessions' worktrees
+.claude/worktrees/

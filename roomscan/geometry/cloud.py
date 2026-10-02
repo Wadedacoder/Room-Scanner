@@ -96,3 +96,17 @@ def wall_band_rays(cap: StrayCapture, stride: int, floor_y: float, min_conf: int
         ends.append(P[:, [0, 2]])
         starts.append(np.repeat(cap.poses[i, [0, 2], 3][None], len(P), 0))
     return np.concatenate(starts), np.concatenate(ends)
+
+
+def sightline_sample(cap, stride: int, max_depth: float = 5.0, per_frame: int = 300, seed: int = 1):
+    """(cam_xz, pt_xz, pt_y) samples over the full height, for door/window detection (roomscan.openings)."""
+    rng = np.random.default_rng(seed)
+    cs, ps, ys = [], [], []
+    for i in range(0, len(cap) - 1, stride):
+        P = cap.points_world(i, 1, max_depth)
+        if len(P) > per_frame:
+            P = P[rng.choice(len(P), per_frame, replace=False)]
+        cs.append(np.repeat(cap.poses[i, [0, 2], 3][None], len(P), 0))
+        ps.append(P[:, [0, 2]])
+        ys.append(P[:, 1])
+    return np.concatenate(cs), np.concatenate(ps), np.concatenate(ys)

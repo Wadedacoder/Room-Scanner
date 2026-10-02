@@ -45,7 +45,9 @@ class LearnedRecon:
         self.torch = torch
 
     def _load(self, repo):
-        return self.DA3.from_pretrained(repo).to(self.device).eval()
+        from roomscan.recon.da3_loader import load_pretrained
+
+        return load_pretrained(self.DA3, repo).to(self.device).eval()
 
     def _release(self):
         """Return freed tensors to the OS. The CALLER must drop every reference to the model first (including closures):

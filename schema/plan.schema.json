@@ -125,6 +125,10 @@
         },
         "detection_confidence": {
           "type": "number"
+        },
+        "centre_plan": {
+          "$ref": "#/$defs/Point2",
+          "description": "opening centre in plan coordinates"
         }
       }
     },
