@@ -8,6 +8,11 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Changed
+- Capture protocol: one photo per doorway taken *through* it into the next room (within the 8 per room). Why (E14,
+  E17, E18): rooms join only where a photo sees into the neighbouring room (kitchen↔living 99 matches, bathroom↔living
+  42); every other room pair stayed at noise level and those rooms were left unconnected.
+
 ## [0.6.1] - 2026-10-02 · links accepted by two-way agreement; door alignment · tag `v0.6.1`
 
 ### Changed

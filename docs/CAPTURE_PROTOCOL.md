@@ -17,6 +17,9 @@ For **each room**, in the Camera app, Photo mode, **0.5×**, phone held **sidewa
 3. **Turn clockwise by about half a screen** (until what was in the middle of the screen is at the left edge). Take the next photo.
 4. Repeat until you are back where you started: **8 photos**. Every photo must share about half of its view with the one before it.
 5. Every doorway out of the room must appear **whole** (both sides of the frame and the floor) in at least one photo.
+6. **Doorway photo (one per doorway, counts toward the 8):** stand about 1 m back from each doorway, inside this room,
+   and take one photo straight *through* it, so the next room fills the middle of the picture. This is what lets the
+   rooms be joined into one floor plan.
 
 Don't skip around the room or take photos from different spots. One spot, one full turn.
 
