@@ -31,6 +31,8 @@ def detect_tier(path: Path) -> str:
         return "video"
     if path.is_dir() and any(p.is_dir() for p in path.iterdir()):
         return "photos"  # one sub-folder of stills per room
+    if path.is_dir() and any(p.suffix.lower() in {".jpg", ".jpeg", ".heic", ".heif", ".png"} for p in path.iterdir()):
+        return "photos"  # photos without room folders: one room (warned)
     raise typer.BadParameter(f"cannot infer tier for {path}")
 
 

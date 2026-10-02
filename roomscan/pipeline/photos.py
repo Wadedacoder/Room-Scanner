@@ -10,7 +10,7 @@ import numpy as np
 from roomscan.damage.stage import finalize, room_damage
 from roomscan.geometry.cloud import find_levels
 from roomscan.io.photos import load_capture
-from roomscan.pipeline.backend import PHOTO_ERR, empty_plan, meas, rooms_from_cloud
+from roomscan.pipeline.backend import PHOTO_ERR, ErrorModel, empty_plan, meas, rooms_from_cloud
 from roomscan.recon.learned import LearnedRecon, backproject, gravity_align, voxelize
 
 VOXEL = 0.03  # photo clouds are sparser and noisier than LiDAR
@@ -40,10 +40,11 @@ def reconstruct_room(model: LearnedRecon, photos):
 
 def run_photos(path: Path, cfg) -> tuple[dict, dict]:
     t0 = time.time()
-    capture = load_capture(Path(path))
+    warnings = []
+    capture = load_capture(Path(path), warnings)
     model = LearnedRecon(cfg)
     plan = empty_plan("photos", str(path))
-    warnings, debug = [], {}
+    debug = {}
     total_area, total_var = 0.0, 0.0
     frames, room_photos, per_room = {}, {}, {}
     damage, damage_inputs = [], []
@@ -64,7 +65,9 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
         sightlines = tuple(np.concatenate([x[i] for x in sl]) for i in range(3))
         fwd = (rec.c2w[:, :3, 2] @ Gr.T)[:, [0, 2]]  # camera viewing directions, gravity frame
         hfov = float(2 * np.arctan(rec.depth.shape[2] / 2 / rec.K[0, 0, 0]))
-        res = rooms_from_cloud(P, cams, rays, PHOTO_ERR, VOXEL, split=False, id_prefix=name, label=name,
+        # no EXIF focal: the assumed 0.5x lens may be wrong (1x would be 2x off), so scale is far less certain
+        err = PHOTO_ERR if not photos[0].focal_source.startswith("assumed") else ErrorModel(PHOTO_ERR.abs_m, 0.25)
+        res = rooms_from_cloud(P, cams, rays, err, VOXEL, split=False, id_prefix=name, label=name,
                                sightlines=sightlines, cam_fwd_xz=fwd, hfov=hfov,
                                interior_mode=cfg["recon"]["photo_outline"])  # sparse views can't carve (E6)
         warnings += res.warnings
