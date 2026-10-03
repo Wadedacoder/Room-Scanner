@@ -6,6 +6,9 @@
 # macOS ignores `ulimit -v`, and on an 8 GB laptop a runaway process freezes the whole machine (2026-10-02 crash),
 # so long benchmark runs go through this. Logs peak memory every 2 s to stderr.
 #   LIMIT_MB=3500 scripts/run_guarded.sh .venv/bin/python -m roomscan.cli run <capture> -o out/
+# macOS on battery idle-sleeps after 1 min: a sleeping Mac froze runs mid-way (2026-10-03 "hangs" were sleeps, see
+# pmset -g log). Keep the system awake for as long as this script runs.
+if [ -z "${CAFFEINATED:-}" ] && command -v caffeinate >/dev/null 2>&1; then CAFFEINATED=1 exec caffeinate -i "$0" "$@"; fi
 set -uo pipefail
 LIMIT_MB="${LIMIT_MB:-5500}"  # user cap: 6 GB total
 mem_mb() {  # total MB of the given pids

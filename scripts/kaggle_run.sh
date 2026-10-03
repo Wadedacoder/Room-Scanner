@@ -3,6 +3,9 @@
 #   scripts/kaggle_run.sh [-p cuda-16gb] [-o out/kaggle] <capture> [<capture> ...] [-- extra roomscan args]
 # e.g. scripts/kaggle_run.sh data/raw/photos/house_b data/raw/photos/house_b_study -- -s damage.backend=off
 # Needs ~/.kaggle/access_token (or kaggle.json). Typical wall time: ~5 min setup + the runs.
+# macOS on battery idle-sleeps after 1 min: a sleeping Mac froze runs mid-way (2026-10-03 "hangs" were sleeps, see
+# pmset -g log). Keep the system awake for as long as this script runs.
+if [ -z "${CAFFEINATED:-}" ] && command -v caffeinate >/dev/null 2>&1; then CAFFEINATED=1 exec caffeinate -i "$0" "$@"; fi
 set -euo pipefail
 cd "$(dirname "$0")/.."
 KAGGLE=.venv/bin/kaggle; USER=devmsjsj; KERNEL="$USER/roomscan-remote-run"

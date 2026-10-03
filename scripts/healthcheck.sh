@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Health check (run every 30 min by the session watch; also by hand). Prints one line per check, then a verdict,
 # and appends a timestamped summary to runs/health.log. Read-only: it never starts or kills a pipeline job.
+# macOS on battery idle-sleeps after 1 min: a sleeping Mac froze runs mid-way (2026-10-03 "hangs" were sleeps, see
+# pmset -g log). Keep the system awake for as long as this script runs.
+if [ -z "${CAFFEINATED:-}" ] && command -v caffeinate >/dev/null 2>&1; then CAFFEINATED=1 exec caffeinate -i "$0" "$@"; fi
 set -uo pipefail
 cd "$(dirname "$0")/.."
 PASS=0; FAIL=0; WARN=0

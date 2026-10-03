@@ -24,8 +24,12 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
   the fix; doorway look-through photos are.
 
 ### Health watch
-- 2026-10-03 09:24: the health check's test run took ~15 min (wall 934 s, CPU 49 s): the LiDAR end-to-end test
-  intermittently stalled at interpreter exit after passing, only under pytest. The real CLI exits cleanly (3/3 runs of
+- 2026-10-03 14:12: **correction**: the "hangs" since the morning (tests, Kaggle CLI, health check) were the Mac
+  **sleeping** (on battery, idle-sleep after 1 min; `pmset -g log` shows sleep from 13:11 with 25 s dark wakes every
+  15 min), not a code problem. Long scripts (healthcheck, run_guarded, kaggle_run) now run under `caffeinate -i`;
+  a closed lid on battery still sleeps, so demo runs need the charger connected and the lid open.
+- 2026-10-03 09:24: the health check's test run took ~15 min (wall 934 s, CPU 49 s); first diagnosed as the LiDAR
+  end-to-end test stalling at exit under pytest (see the correction above: most likely the same sleep). The real CLI exits cleanly (3/3 runs of
   the same scan, 29–30 s each). The test now runs geometry only (`damage.backend=off`; damage has its own tests), and
   the health check caps the test run at 240 s.
 
