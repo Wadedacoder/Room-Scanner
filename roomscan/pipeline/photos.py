@@ -108,8 +108,9 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
     x_cursor = 0.0
     if placed:
         allp = np.concatenate([_to_property(per_room[r]["polygon"], frames[r], placed[r], root_theta) for r in placed])
-        x_cursor = float(allp[:, 0].max()) + 1.5
+        x_cursor = float(allp[:, 0].max()) + 2.0
     for name, room in per_room.items():
+        room["connected"] = name in placed or len(per_room) == 1  # False: no reliable link; drawn apart
         if name in placed:
             _transform_room(room, frames[name], placed[name], root_theta)
         else:
@@ -117,7 +118,7 @@ def run_photos(path: Path, cfg) -> tuple[dict, dict]:
             poly = np.array(room["polygon"])
             shift = np.array([x_cursor - poly[:, 0].min(), 0.0])
             _shift_room(room, shift)
-            x_cursor = float(poly[:, 0].max() + shift[0] + 1.0)
+            x_cursor = float(poly[:, 0].max() + shift[0] + 1.2)
         plan["rooms"].append(room)
         total_area += room["floor_area"]["value"]
         total_var += ((room["floor_area"]["hi"] - room["floor_area"]["lo"]) / (2 * 1.645)) ** 2

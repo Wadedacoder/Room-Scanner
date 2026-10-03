@@ -27,7 +27,12 @@ def render_svg(plan: dict, px_per_m: float = 80.0, margin: float = 1.0) -> str:
     for k, r in enumerate(plan["rooms"]):
         c = PALETTE[k % len(PALETTE)]
         poly = " ".join(f"{x:.1f},{y:.1f}" for x, y in map(xy, r["polygon"]))
-        out.append(f'<polygon points="{poly}" fill="{c}" fill-opacity="0.12" stroke="#222" stroke-width="3"/>')
+        if r.get("connected", True):
+            out.append(f'<polygon points="{poly}" fill="{c}" fill-opacity="0.12" stroke="#222" stroke-width="3"/>')
+        else:  # no reliable link to the other rooms: drawn apart, visibly not part of the stitched plan
+            c = "#888888"
+            out.append(f'<polygon points="{poly}" fill="#999999" fill-opacity="0.08" stroke="#888" stroke-width="2" '
+                       'stroke-dasharray="8 5"/>')
         for w in r["walls"]:
             (x1, y1), (x2, y2) = xy(w["start"]), xy(w["end"])
             mx, my = (x1 + x2) / 2, (y1 + y2) / 2
@@ -78,7 +83,7 @@ def render_svg(plan: dict, px_per_m: float = 80.0, margin: float = 1.0) -> str:
                        f'{d["id"]} {d["class"].replace("_", " ")} on {surf}, {d["area"]["value"]:.2f} m²</text>')
         ceil = _fmt(r.get("ceiling_height"))
         out.append(f'<text x="{cx:.1f}" y="{cy:.1f}" font-size="14" font-weight="bold" text-anchor="middle" fill="{c}">'
-                   f'{r["label"]}</text>')
+                   f'{r["label"]}{"" if r.get("connected", True) else " (not connected)"}</text>')
         out.append(f'<text x="{cx:.1f}" y="{cy + 16:.1f}" font-size="11" text-anchor="middle" fill="#333">'
                    f'{_fmt(r["floor_area"], "m²")}</text>')
         out.append(f'<text x="{cx:.1f}" y="{cy + 30:.1f}" font-size="11" text-anchor="middle" fill="#333">'
@@ -86,6 +91,10 @@ def render_svg(plan: dict, px_per_m: float = 80.0, margin: float = 1.0) -> str:
     fp = plan["property"]["footprint_area"]
     out.append(f'<text x="12" y="20" font-size="13" fill="#222">{plan["capture"]["tier"]} · footprint '
                f'{_fmt(fp, "m²")} · {len(plan["rooms"])} rooms</text>')
+    n_off = sum(1 for r in plan["rooms"] if not r.get("connected", True))
+    if n_off:
+        out.append(f'<text x="12" y="54" font-size="11" fill="#666">{n_off} room(s) dashed grey: no photo links them to the '
+                   'others, so they are measured but not placed (add a photo through each doorway)</text>')
     out.append(f'<text x="12" y="37" font-size="11" fill="#D62728">{len(plan.get("damage", []))} damage regions · '
                f'{len(plan.get("concealed_flags", []))} concealed-damage flags · {len(plan.get("scope", []))} '
                'scope items</text>')

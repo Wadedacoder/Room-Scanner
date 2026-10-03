@@ -207,7 +207,11 @@ def run_video(path: Path, cfg) -> tuple[dict, dict]:
     plan["warnings"] = warns + [(f"video-tier intervals use a {100 * err.rel:.1f}% scale term (4% DA3Metric + "
                                  "measured per-piece scale error); not yet calibrated against tape"),
                                 "video openings use learned-depth tolerances (E15); widths are untaped"]
-    return plan, {"backend": res.debug, "piece_scales": piece_scales, "join_log": join_log}
+    piece_of = {k: pi for pi, ks in enumerate(keys_per_piece) for k in ks}
+    return plan, {"backend": res.debug, "piece_scales": piece_scales, "join_log": join_log,
+                  # for diagnostics (bench/local/e34_video_vs_photos.py): where each keyframe landed, by piece
+                  "keys": keys, "key_piece": [piece_of.get(k, -1) for k in keys], "cam_xyz": cam_xyz,
+                  "cloud": P, "floor": floor}
 
 
 def _video_damage(plan, res, keys, imgs, depths, K, cams, G, err, cfg, warnings) -> None:

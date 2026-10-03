@@ -710,3 +710,18 @@ Two changes to `place_rooms`:
 Bedroom↔store link strongly to each other (218 matches) but that pair overlaps the main group wherever it joins, so
 it stays separate. Figure: `docs/img/e32_mast3r_pipeline_plan.png` (hall between bathroom, living and study; small
 residual overlap of hall/study with living). Layout not verified against the real flat: needs the user.
+
+## E34: Why the whole-house video does not match the photo rooms (2026-10-03)
+
+User report: the video and photo outputs of the same flat don't match (video: 3 rooms, 60.2 m²; photos: 6 rooms,
+46.0 m²). `bench/local/e34_video_vs_photos.py` plots the video's dense wall band and every keyframe camera coloured
+by COLMAP piece (`docs/img/e34_video_topdown.png`).
+
+* **The same walls appear several times, rotated 10–20° against each other.** The 212 s walk is tracked as 17 COLMAP
+  pieces; 15 have only 3 keyframes, so each piece's metric scale rests on 3 depth ratios, and the DA3 bridges that
+  join them rescale pieces by 0.70–2.50×. Each copy of a wall lands somewhere else, so the outline is drawn around
+  blurred, doubled walls and neighbouring rooms merge (r1 = 33.8 m²; r3 = 18.1 m²).
+* The photo tier measures each room from one spot with no joining, which is why it is consistent (study ±2–5%).
+* Root cause is tracking, not the room logic: 38% of the walk is never registered and the rest is in many small
+  pieces (E21–E23). Fixes that were tried (looser COLMAP, learned matches) made it worse. For this capture, the video
+  tier's output should not be used for multi-room plans; the intervals (±15% scale term) already say so.

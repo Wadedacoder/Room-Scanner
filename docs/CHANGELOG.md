@@ -8,6 +8,13 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Changed
+- **Stitched photo plans never draw overlapping rooms**: overlap tolerance 15% → 3% (after the slide). Rooms with no
+  reliable link are flagged `connected: false` and drawn dashed grey with "(not connected)", plus a header line saying
+  why. User feedback: the overlapping plan "is nonsensical".
+- E34: the whole-house video's walls are duplicated and rotated 10–20° across 17 COLMAP pieces, so rooms merge;
+  documented with a top-down figure.
+
 ### Changed (E32)
 - Photo placement merges groups of rooms strongest link first (Kruskal) and slides a group up to 1.5 m along the link
   direction before rejecting an overlap. With `recon.photo_matcher=mast3r`: 5 of 7 house rooms linked (was 3);
