@@ -607,3 +607,34 @@ has a lowered ceiling or soffit, or the room outline reaches under a neighbour's
 be resolved, and the schema holds one ceiling per room.
 → A second flat level ≥ 15 cm from the reported one and covering ≥ 25% of the room is now reported as a warning with
 both heights (r2, r3 here). The house_b photo plan is unchanged (no second levels).
+
+## E28: Gravity-aware (4-DoF) link poses for photo stitching (2026-10-03)
+
+User report: rooms are not coming together. Diagnostic on `house_b_hall` (19 photos, 7 rooms incl. 2 hall photos):
+the hall↔study and hall↔bathroom candidates agreed in yaw both ways but showed 43–58° relative tilt, so they were
+rejected. Every room's gravity estimate was checked (floor fit within 4.5° of the camera prior, cameras within 9° of
+level), so the tilt came from 6-DoF EPnP on 15–40 mostly coplanar matched points, not from the rooms.
+→ Links are now solved with gravity known on both sides: yaw (1° grid) + camera centre (2-point RANSAC, linear
+least squares). Acceptance also requires the two directions' offsets to agree (within max(1 m, 50% of the link
+length); rooms differ in metric scale by ~5–15%).
+
+Result: true links agree better (kitchen↔living 1.0° yaw, bathroom↔living 6.0°), but **no new room links**. Without
+the tilt artefact, the hall↔study candidate is inconsistent (99° yaw disagreement); the remaining agreeing pairs
+(bathroom↔study, bedroom↔store) rest on 8–10 PnP inliers. The photos simply contain no reliable shared view between
+the hall/study/bedroom/store and the rest. Still 3 of 6 rooms connected.
+
+## E29: One multi-view model on all photos at once? (2026-10-03)
+
+User question: is there a model you can give all the photos to? Tested locally (home photos stay on this machine):
+all 19 `house_b_hall` photos in ONE Depth Anything 3 pass (Base, process resolution 336 so 19 views fit; peak
+4.3 GB). `bench/local/e29_joint_da3.py`, figure `docs/img_e29_joint_da3.png` (top-down wall band, coloured by room).
+
+Result: **the model stacks rooms on top of each other.** Study, living, kitchen, store and bedroom overlap in one
+~4 × 4 m area; only the bathroom comes out as a separate, clean room. Photos taken from one spot in a room are spread
+up to 2.4 m apart. Same root cause as E14/E28: multi-view models (DA3, VGGT, MASt3R-SfM) relate views through shared
+content; rooms that no photo sees together cannot be placed by any of them, and a joint model guesses (here, by
+overlaying) instead of saying so. Larger models (DA3-Giant, VGGT) would need the photos uploaded to a cloud GPU and
+face the same missing-overlap problem.
+
+**Conclusion:** what connects rooms is capture, not model: one photo per doorway looking through into the next room
+(protocol step 6), or a continuous video walk. With the current photos, 3 of 6 rooms is what the evidence supports.

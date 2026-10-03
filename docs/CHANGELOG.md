@@ -8,6 +8,12 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Changed
+- Photo stitching solves cross-room links with gravity known on both sides (4-DoF: yaw + offset) and checks that
+  both directions agree in yaw and offset (E28). Same 3/6 rooms linked on house_b; no new reliable links exist.
+- E29: all house photos in one DA3 pass overlays the rooms (only the bathroom separates): a bigger joint model is not
+  the fix; doorway look-through photos are.
+
 ### Health watch
 - 2026-10-03 09:24: the health check's test run took ~15 min (wall 934 s, CPU 49 s): the LiDAR end-to-end test
   intermittently stalled at interpreter exit after passing, only under pytest. The real CLI exits cleanly (3/3 runs of

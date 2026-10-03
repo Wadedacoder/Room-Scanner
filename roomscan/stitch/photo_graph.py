@@ -2,7 +2,8 @@
 
 For a strong cross-room link (photo i of room A and photo j of room B see the same surfaces, e.g. through a doorway):
   1. lift A's matched pixels to 3D with A's metric depth (A's gravity-aligned frame);
-  2. PnP: where photo j must have been, in A's frame, to see those 3D points at B's matched pixels;
+  2. gravity-aware PnP (4 DoF: yaw + translation; both frames already know "up", E28): where photo j must have been,
+     in A's frame, to see those 3D points at B's matched pixels;
   3. B already knows where photo j was in B's own frame, so T_A<-B = pose_j_in_A * inverse(pose_j_in_B).
 Both frames are gravity-aligned, so T is restricted to yaw + translation; the yaw is then snapped to the 90-degree
 steps between the two rooms' wall directions (walls are square to each other).
@@ -21,6 +22,7 @@ from roomscan.geometry import plan2d as p2
 MIN_INLIERS = 30  # candidates; acceptance is the two-way agreement test below (E18)
 MAX_YAW_DISAGREE_DEG = 10.0
 MAX_TILT_DEG = 15.0
+MAX_T_DISAGREE_M = 1.0
 
 
 @dataclass
@@ -62,19 +64,68 @@ def _relative_pose(A: RoomFrame, ia: int, B: RoomFrame, jb: int, pts_a: np.ndarr
     sb = B.depth.shape[2] / B.photo_hw[1]
     Kb = B.K[jb].copy()
     Kb[:2] /= sb  # back to original-photo pixels (pts_b are original pixels)
-    okp, rvec, tvec, inl = cv2.solvePnPRansac(Xw.astype(np.float64), pb.astype(np.float64), Kb, None,
-                                              reprojectionError=8.0, iterationsCount=2000, confidence=0.999,
-                                              flags=cv2.SOLVEPNP_EPNP)
-    if not okp or inl is None or len(inl) < 10:
+    # E28: 6-DoF EPnP on 15-40 mostly coplanar points (a door, one wall) returned 40-60 deg tilts for links whose yaw
+    # agreed both ways, so the links were rejected. Both rooms are gravity-aligned: only yaw + 3D offset are unknown.
+    sol = _pnp_4dof(Xw, pb, Kb, B.c2w[jb][:3, :3])
+    if sol is None:
         return None
-    Rw2c, _ = cv2.Rodrigues(rvec)
+    yaw, t_cam, n_inl = sol
+    R = _yaw_mat(yaw)
     pose_j_in_A = np.eye(4)
-    pose_j_in_A[:3, :3] = Rw2c.T
-    pose_j_in_A[:3, 3] = (-Rw2c.T @ tvec).ravel()
+    pose_j_in_A[:3, :3] = R @ B.c2w[jb][:3, :3]
+    pose_j_in_A[:3, 3] = t_cam
     T_AB = pose_j_in_A @ np.linalg.inv(B.c2w[jb])
-    yaw = float(np.arctan2(T_AB[0, 2], T_AB[0, 0]))  # rotation about +Y
-    tilt = float(np.degrees(np.arccos(np.clip(T_AB[1, 1], -1, 1))))
-    return yaw, T_AB[[0, 2], 3].copy(), len(inl), tilt
+    return yaw, T_AB[[0, 2], 3].copy(), n_inl, 0.0
+
+
+def _yaw_mat(yaw: float) -> np.ndarray:
+    """Rotation about +Y by yaw (same convention as arctan2(R[0,2], R[0,0]))."""
+    c, s = np.cos(yaw), np.sin(yaw)
+    return np.array([[c, 0, s], [0, 1.0, 0], [-s, 0, c]])
+
+
+def _pnp_4dof(Xw: np.ndarray, px: np.ndarray, K: np.ndarray, R_cam_b: np.ndarray, thr_px: float = 8.0,
+              seed: int = 0) -> tuple[float, np.ndarray, int] | None:
+    """Camera pose in A's frame with known gravity: rotation = Ry(yaw) @ R_cam_b, unknown yaw and centre C.
+    For each yaw (1 deg grid) the projection is linear in C; 2-point RANSAC + least squares on inliers.
+    Returns (yaw, camera centre in A, inliers)."""
+    rng = np.random.default_rng(seed)
+    n = len(Xw)
+    if n < 8:
+        return None
+    rays = np.stack([(px[:, 0] - K[0, 2]) / K[0, 0], (px[:, 1] - K[1, 2]) / K[1, 1], np.ones(n)], 1)
+    pairs = rng.integers(0, n, size=(64, 2))
+    pairs = pairs[pairs[:, 0] != pairs[:, 1]]
+    best = (0, None)
+    for yaw in np.radians(np.arange(0, 360, 1.0)):
+        Rcw = (_yaw_mat(yaw) @ R_cam_b).T  # world (A) -> camera
+        # camera coords: Xc = Rcw (X - C); projection constraint x*Xc_z - Xc_x = 0, y*Xc_z - Xc_y = 0 (linear in C)
+        P = Xw @ Rcw.T  # Rcw X
+        r0, r1, r2 = Rcw
+        A_rows = np.concatenate([rays[:, [0]] * r2 - r0, rays[:, [1]] * r2 - r1])  # (2n,3) coefficients of -C
+        b = np.concatenate([rays[:, 0] * P[:, 2] - P[:, 0], rays[:, 1] * P[:, 2] - P[:, 1]])
+        for i, j in pairs:
+            idx = [i, j, n + i, n + j]
+            C, *_ = np.linalg.lstsq(A_rows[idx], b[idx], rcond=None)
+            Xc = P - C @ Rcw.T
+            front = Xc[:, 2] > 0.1
+            err = np.full(n, np.inf)
+            u = K[0, 0] * Xc[front, 0] / Xc[front, 2] + K[0, 2]
+            v = K[1, 1] * Xc[front, 1] / Xc[front, 2] + K[1, 2]
+            err[front] = np.hypot(u - px[front, 0], v - px[front, 1])
+            k = int((err < thr_px).sum())
+            if k > best[0]:
+                best = (k, (yaw, C, err < thr_px))
+    if best[1] is None or best[0] < 8:
+        return None
+    yaw, C, inl = best[1]
+    Rcw = (_yaw_mat(yaw) @ R_cam_b).T
+    P = Xw[inl] @ Rcw.T
+    r0, r1, r2 = Rcw
+    A_rows = np.concatenate([rays[inl, 0:1] * r2 - r0, rays[inl, 1:2] * r2 - r1])
+    b = np.concatenate([rays[inl, 0] * P[:, 2] - P[:, 0], rays[inl, 1] * P[:, 2] - P[:, 1]])
+    C, *_ = np.linalg.lstsq(A_rows, b, rcond=None)
+    return float(yaw), C, int(inl.sum())
 
 
 def _snap_yaw(yaw: float, theta_a: float, theta_b: float) -> float:
@@ -107,6 +158,10 @@ def place_rooms(frames: dict[str, RoomFrame], links, min_inliers: int = MIN_INLI
         (y1, t1, n1, tilt1), (y2, t2, n2, tilt2) = r1, r2
         disagree = abs(np.degrees(np.angle(np.exp(1j * (y1 + y2)))))
         if disagree > MAX_YAW_DISAGREE_DEG or max(tilt1, tilt2) > MAX_TILT_DEG:
+            continue
+        # E28: the offsets must agree too (B->A computed from B's side is the mirror of A->B)
+        t_gap = float(np.linalg.norm(t2 + _xz_rot(-y1) @ t1))
+        if t_gap > max(MAX_T_DISAGREE_M, 0.5 * float(np.linalg.norm(t1))):  # rooms differ in metric scale by ~5-15%
             continue
         yaw = float(np.angle((np.exp(1j * y1) + np.exp(-1j * y2)) / 2))
         cand.append({"a": L.room_a, "b": L.room_b, "yaw": yaw, "t": t1, "matches": L.inliers, "pnp_inliers": n1 + n2,
