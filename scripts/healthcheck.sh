@@ -3,6 +3,9 @@
 # and appends a timestamped summary to runs/health.log. Read-only: it never starts or kills a pipeline job.
 # macOS on battery idle-sleeps after 1 min: a sleeping Mac froze runs mid-way (2026-10-03 "hangs" were sleeps, see
 # pmset -g log). Keep the system awake for as long as this script runs.
+# The body is a function called on the last line: bash then parses the whole file before running it, so
+# editing this script cannot break a copy that is already running (2026-10-03: an edit killed a 4 h job).
+main() {
 if [ -z "${CAFFEINATED:-}" ] && command -v caffeinate >/dev/null 2>&1; then CAFFEINATED=1 exec caffeinate -i "$0" "$@"; fi
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -68,3 +71,5 @@ else warn "model weights not fully cached: run scripts/setup_models.sh with netw
 VERDICT=$([ $FAIL -gt 0 ] && echo FAIL || ([ $WARN -gt 0 ] && echo WARN || echo OK))
 echo "verdict: $VERDICT ($PASS ok, $WARN warn, $FAIL fail)"
 mkdir -p runs && echo "$(date '+%F %T') $VERDICT ok=$PASS warn=$WARN fail=$FAIL" >> runs/health.log
+}
+main "$@"; exit $?

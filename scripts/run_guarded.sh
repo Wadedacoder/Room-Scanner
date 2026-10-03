@@ -8,6 +8,9 @@
 #   LIMIT_MB=3500 scripts/run_guarded.sh .venv/bin/python -m roomscan.cli run <capture> -o out/
 # macOS on battery idle-sleeps after 1 min: a sleeping Mac froze runs mid-way (2026-10-03 "hangs" were sleeps, see
 # pmset -g log). Keep the system awake for as long as this script runs.
+# The body is a function called on the last line: bash then parses the whole file before running it, so
+# editing this script cannot break a copy that is already running (2026-10-03: an edit killed a 4 h job).
+main() {
 if [ -z "${CAFFEINATED:-}" ] && command -v caffeinate >/dev/null 2>&1; then CAFFEINATED=1 exec caffeinate -i "$0" "$@"; fi
 set -uo pipefail
 LIMIT_MB="${LIMIT_MB:-5500}"  # user cap: 6 GB total
@@ -43,3 +46,5 @@ done
 wait "$PID"; CODE=$?
 echo "[run_guarded] exit ${CODE}, peak ${PEAK} MB" >&2
 exit $CODE
+}
+main "$@"; exit $?

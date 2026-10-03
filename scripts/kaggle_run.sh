@@ -5,6 +5,9 @@
 # Needs ~/.kaggle/access_token (or kaggle.json). Typical wall time: ~5 min setup + the runs.
 # macOS on battery idle-sleeps after 1 min: a sleeping Mac froze runs mid-way (2026-10-03 "hangs" were sleeps, see
 # pmset -g log). Keep the system awake for as long as this script runs.
+# The body is a function called on the last line: bash then parses the whole file before running it, so
+# editing this script cannot break a copy that is already running (2026-10-03: an edit killed a 4 h job).
+main() {
 if [ -z "${CAFFEINATED:-}" ] && command -v caffeinate >/dev/null 2>&1; then CAFFEINATED=1 exec caffeinate -i "$0" "$@"; fi
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -68,3 +71,5 @@ done
 mkdir -p "$OUT"
 $KAGGLE kernels output "$KERNEL" -p "$OUT" -q || $KAGGLE kernels output "$KERNEL" -p "$OUT"
 echo "results in $OUT:"; cat "$OUT/summary.json" 2>/dev/null || tail -40 "$OUT"/*.log
+}
+main "$@"; exit $?

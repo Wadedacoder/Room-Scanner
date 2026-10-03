@@ -22,8 +22,8 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 - 2026-10-03 15:15: **my edit broke a running job.** Adding the caffeinate guard to `scripts/run_guarded.sh` while the
   user's website job (10:53, the Stray rgb.mp4) was executing it made bash read the changed file mid-run
   (`line 53: syntax error`), and the job failed after ~4 h. The script itself is fine (new runs work). Fix pending:
-  wrap the scripts' bodies in a function so edits can't affect a running copy; applied once the current website job
-  (house_b_walk.MOV) finishes, since editing now would break it the same way.
+  wrap the scripts' bodies in a function so edits can't affect a running copy; **applied 16:36** after the website
+  job (house_b_walk.MOV) finished (run_guarded, healthcheck, kaggle_run; exit codes still pass through).
 - 2026-10-03 14:41 FAIL (job > 20 min): the user's own website run from 10:53 (a Stray scan's rgb.mp4 sent as a
   video) is still progressing (log growing) after ~3.8 h, slowed by the Mac sleeping; left running, not killed.
 
