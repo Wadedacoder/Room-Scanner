@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-import cv2
 import numpy as np
 
 from roomscan.geometry import plan2d as p2
@@ -23,7 +22,8 @@ MIN_INLIERS = 30  # candidates; acceptance is the two-way agreement test below (
 MAX_YAW_DISAGREE_DEG = 10.0
 MAX_TILT_DEG = 15.0
 MAX_T_DISAGREE_M = 1.0
-MAX_OVERLAP_FRAC = 0.15  # of the smaller room's floor; allows wall-position error, not a room on top of another
+MAX_OVERLAP_FRAC = 0.15
+MAX_SLIDE_M = 1.5  # how far a link's distance may be wrong (through-doorway depth, E17)  # of the smaller room's floor; allows wall-position error, not a room on top of another
 
 
 @dataclass
@@ -168,36 +168,71 @@ def place_rooms(frames: dict[str, RoomFrame], links, min_inliers: int = MIN_INLI
         cand.append({"a": L.room_a, "b": L.room_b, "yaw": yaw, "t": t1, "matches": L.inliers, "pnp_inliers": n1 + n2,
                      "yaw_disagree_deg": round(float(disagree), 1), "tilt_deg": round(max(tilt1, tilt2), 1)})
     if not cand:
+        place_rooms.rejected = []
         return {}, []
-    degree: dict[str, int] = {}
-    for c in cand:
-        degree[c["a"]] = degree.get(c["a"], 0) + c["pnp_inliers"]
-        degree[c["b"]] = degree.get(c["b"], 0) + c["pnp_inliers"]
-    root = max(degree, key=degree.get)
-    placed = {root: Placement(0.0, np.zeros(2))}
-    edges, rejected = [], []
-    changed = True
-    while changed:
-        changed = False
-        for c in sorted(cand, key=lambda x: -x["pnp_inliers"]):
-            a, b = c["a"], c["b"]
-            for (p, q, yaw, t) in ((a, b, c["yaw"], c["t"]), (b, a, -c["yaw"], -_xz_rot(-c["yaw"]) @ c["t"])):
-                if p in placed and q not in placed:
-                    yaw_s = _snap_yaw(yaw, frames[p].theta, frames[q].theta)
-                    P = placed[p]
-                    cand_pl = Placement(P.yaw + yaw_s, P.t + _xz_rot(P.yaw) @ t, p, c)
-                    # E31: rooms cannot share floor. A link that puts this room on top of a placed one is wrong
-                    # (repetitive texture can pass the match and agreement tests); try the room's other links.
-                    clash = _worst_overlap(frames, placed, q, cand_pl)
-                    if clash > MAX_OVERLAP_FRAC:
-                        rejected.append({"a": p, "b": q, "matches": c["matches"], "overlap": round(clash, 2)})
-                        continue
-                    placed[q] = cand_pl
-                    edges.append({"a": p, "b": q, "matches": c["matches"], "pnp_inliers": c["pnp_inliers"],
-                                  "yaw_disagree_deg": c["yaw_disagree_deg"], "tilt_deg": c["tilt_deg"],
-                                  "yaw_snap_deg": round(float(np.degrees(yaw_s - yaw)), 1)})
-                    changed = True
+    # E32: merge GROUPS of rooms, strongest link first (Kruskal). Growing one tree from a root let a weak early link
+    # (living->bathroom, 182 matches) block two strong consistent ones (bathroom<->hall 533, bathroom<->bedroom 427)
+    # through the overlap test. Each link joins two groups only if no room of one overlaps a room of the other.
+    group = {r: r for r in frames}  # room -> group id
+    members = {r: {r: Placement(0.0, np.zeros(2))} for r in frames}  # group id -> {room: placement in group frame}
+    accepted, rejected = [], []
+    for c in sorted(cand, key=lambda x: -x["pnp_inliers"]):
+        a, b = c["a"], c["b"]
+        ga, gb = group[a], group[b]
+        if ga == gb:
+            continue
+        yaw_s = _snap_yaw(c["yaw"], frames[a].theta, frames[b].theta)
+        Pa = members[ga][a]
+        Pb_in_A = Placement(Pa.yaw + yaw_s, Pa.t + _xz_rot(Pa.yaw) @ c["t"])  # b placed in A's group frame
+        Pb_in_B = members[gb][b]
+        # transform taking B's group frame into A's: T = Pb_in_A o inverse(Pb_in_B)
+        dyaw = Pb_in_A.yaw - Pb_in_B.yaw
+        dt = Pb_in_A.t - _xz_rot(dyaw) @ Pb_in_B.t
+        moved = {r: Placement(P.yaw + dyaw, _xz_rot(dyaw) @ P.t + dt) for r, P in members[gb].items()}
+        clash = max(_worst_overlap(frames, members[ga], r, P) for r, P in moved.items())
+        if clash > MAX_OVERLAP_FRAC:
+            # E17/E32: a link fixes direction well but distance poorly (depth through a doorway); slide the incoming
+            # group away along the link direction up to MAX_SLIDE_M to the first non-overlapping spot.
+            ca = _room_xz(frames[a], Pa).mean(0)
+            cb = _room_xz(frames[b], moved[b]).mean(0)
+            u = (cb - ca) / max(float(np.linalg.norm(cb - ca)), 1e-6)
+            for d in np.arange(0.1, MAX_SLIDE_M + 1e-6, 0.1):
+                trial = {r: Placement(P.yaw, P.t + u * d) for r, P in moved.items()}
+                if max(_worst_overlap(frames, members[ga], r, P) for r, P in trial.items()) <= MAX_OVERLAP_FRAC:
+                    moved, c = trial, c | {"slid_m": round(float(d), 1)}
+                    break
+            else:
+                rejected.append({"a": a, "b": b, "matches": c["matches"], "overlap": round(clash, 2)})
+                continue
+        members[ga].update(moved)
+        for r in moved:
+            group[r] = ga
+        del members[gb]
+        accepted.append(c)
     place_rooms.rejected = rejected  # for debug output
+    best = max(members.values(), key=lambda m: (len(m), sum(c["pnp_inliers"] for c in accepted
+                                                              if c["a"] in m)))
+    if len(best) < 2:
+        return {}, []
+    # orient the accepted links as a tree from the group's frame room (identity placement) for the wall snap
+    root = next(r for r, P in best.items() if abs(P.yaw) < 1e-12 and not P.t.any())
+    adj: dict[str, list[dict]] = {}
+    for c in accepted:
+        if c["a"] in best:
+            adj.setdefault(c["a"], []).append(c)
+            adj.setdefault(c["b"], []).append(c)
+    placed = {root: Placement(0.0, np.zeros(2))}
+    edges, queue = [], [root]
+    while queue:
+        p = queue.pop(0)
+        for c in adj.get(p, []):
+            q = c["b"] if c["a"] == p else c["a"]
+            if q in placed:
+                continue
+            placed[q] = Placement(best[q].yaw, best[q].t, p, c)
+            edges.append({"a": p, "b": q, "matches": c["matches"], "pnp_inliers": c["pnp_inliers"],
+                          "yaw_disagree_deg": c["yaw_disagree_deg"], "tilt_deg": c["tilt_deg"]})
+            queue.append(q)
     return placed, edges
 
 

@@ -685,3 +685,28 @@ captures; scored with `bench/calibration.py` (`bench/results/calibration_study_g
   would be fitting the test.
 * **Default stays Base** (laptop, protocol captures). Giant stays available via the Kaggle profile; its intervals
   hold (9/11) so it is safe to use, just not better where it matters.
+
+## E32: MASt3R inside the pipeline, and group merging for photo placement (2026-10-03)
+
+`recon.photo_matcher: mast3r` on Kaggle (lite profile on CUDA) first linked only 3 of 7 house rooms, against 5 in the
+E31 bench. Replaying the Kaggle links locally gave the same 3, so the room frames were not the cause; the per-link
+diagnostic showed strong, agreeing links (bathroom↔hall 533 matches 5°, bathroom↔bedroom 427 matches 2°,
+hall↔study 211 matches 1°) **rejected for overlap**, because placement grew one tree from the living room and a weak
+early link (living→bathroom, 182 matches) had fixed the bathroom first.
+
+Two changes to `place_rooms`:
+1. **Group merging (Kruskal)**: every room starts as its own group; links are applied strongest first, each joining
+   two groups only if no room of one overlaps a room of the other (> 15% of the smaller floor).
+2. **Slide before rejecting**: a link fixes direction well but distance poorly (through-doorway depth, E17). If the
+   merge overlaps, the incoming group slides away along the link direction up to 1.5 m to the first clear spot; the
+   wall snap then tightens it.
+
+| house_b_hall (7 rooms) | linked |
+|---|---|
+| DISK+LightGlue (default) | 3 (kitchen, living, bathroom); unchanged by this change |
+| MASt3R, old tree placement | 3 |
+| **MASt3R, group merging + slide** | **5** (kitchen, living, bathroom, hall, study) |
+
+Bedroom↔store link strongly to each other (218 matches) but that pair overlaps the main group wherever it joins, so
+it stays separate. Figure: `docs/img/e32_mast3r_pipeline_plan.png` (hall between bathroom, living and study; small
+residual overlap of hall/study with living). Layout not verified against the real flat: needs the user.

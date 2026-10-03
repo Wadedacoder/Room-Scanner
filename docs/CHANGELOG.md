@@ -8,6 +8,11 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Changed (E32)
+- Photo placement merges groups of rooms strongest link first (Kruskal) and slides a group up to 1.5 m along the link
+  direction before rejecting an overlap. With `recon.photo_matcher=mast3r`: 5 of 7 house rooms linked (was 3);
+  DISK default unchanged (3).
+
 ### Added
 - `recon.photo_matcher: mast3r`: MASt3R dense cross-room matching as a pipeline option (needs the naver/mast3r repo
   via `$MAST3R_REPO` and a GPU; CC BY-NC-SA 4.0, non-commercial; checkpointed like the DISK links). The Kaggle runner
