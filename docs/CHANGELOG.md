@@ -8,6 +8,12 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-03 · submission: clean stitched plans, GPU options (Kaggle, MASt3R), honest limits · tag `v0.9.0`
+
+### Added
+- `docs/SUBMISSION.md` and `docs/Room-Scanner_submission.pdf` (summary + technical report + benchmark + figures,
+  built by `scripts/build_submission_pdf.py`).
+
 ### Changed
 - **Stitched photo plans never draw overlapping rooms**: overlap tolerance 15% → 3% (after the slide). Rooms with no
   reliable link are flagged `connected: false` and drawn dashed grey with "(not connected)", plus a header line saying

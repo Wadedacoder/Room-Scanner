@@ -1,6 +1,6 @@
 [project]
 name = "roomscan"
-version = "0.8.1"
+version = "0.9.0"
 description = "Handheld phone capture (photos / video / LiDAR) -> dimensioned, stitched floor plans with damage, scope and calibrated intervals"
 requires-python = ">=3.11,<3.13"
 dependencies = [

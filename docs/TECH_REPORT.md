@@ -1,6 +1,6 @@
 # Room-Scanner: technical report
 
-Pipeline 0.8.0 · M1 MacBook Air 8 GB (`lite` profile) · iPhone 14 Plus (no LiDAR) · 2026-10-03.
+Pipeline 0.9.0 · M1 MacBook Air 8 GB (`lite` profile) · iPhone 14 Plus (no LiDAR) · 2026-10-03.
 Companion documents: `docs/BENCHMARK.md` (numbers), `docs/EXPERIMENTS.md` (E1–E21, how each was found),
 `docs/CHANGELOG.md` (versioned history), `fixloop/` (declared fix), `docs/COMPLIANCE.md` (requirement → file).
 
@@ -155,6 +155,14 @@ off-protocol term is fitted on the same captures, so this supports the model rat
 * **Registering more video frames** two ways: looser COLMAP thresholds (E22) and DISK+LightGlue matches inside
   COLMAP (E23). Both registered far more frames (79%, 94%) and both made the room worse (−16% and +75% walls), because
   the extra poses were wrong. Fewer correct poses beat more wrong ones.
+* **One multi-view model on all photos at once** (E29): DA3 on all 19 house photos stacked rooms on top of each other;
+  no model can place rooms that no photo sees together.
+* **Stitching with a stronger matcher** (E31–E32): MASt3R on a Kaggle GPU found far more cross-room matches and,
+  with group merging and an overlap rule, linked 5 of 7 rooms (DISK: 3 of 6); the layout is unverified, so it is an
+  option, not the default. A 15% overlap tolerance produced plans that looked broken; rooms now never overlap and
+  unlinked rooms are drawn apart, marked "not connected".
+* **Whole-house video** (E34): 17 COLMAP pieces, joins that rescale pieces 0.7–2.5×, walls duplicated and rotated
+  10–20°, rooms merged. Not usable for multi-room plans from this capture.
 * **A damage query that names a surface** ("a cracked ceiling") boxed the clean ceiling. Negative queries for
   undamaged things fixed it (E24).
 

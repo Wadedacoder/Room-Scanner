@@ -2,6 +2,7 @@
 
 Phone capture (photos, video or LiDAR) in, then a dimensioned, stitched floor plan out, with damage regions, scope line items and a calibrated interval on every measurement.
 
+* **Submission summary: [docs/SUBMISSION.md](docs/SUBMISSION.md)** (PDF: `docs/Room-Scanner_submission.pdf`)
 * Plan: [docs/PLAN.md](docs/PLAN.md)
 * Capture protocol: [docs/CAPTURE_PROTOCOL.md](docs/CAPTURE_PROTOCOL.md)
 * Walk-in runbook: [docs/WALKIN.md](docs/WALKIN.md)
