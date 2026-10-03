@@ -74,6 +74,8 @@ def main() -> None:
         print(summary[-1], flush=True)
         print(open(log).read()[-1500:], flush=True)
     (WORK / "summary.json").write_text(json.dumps(summary, indent=1))
+    if Path("/tmp/roomscan_cache/links").exists():  # small JSON: lets the links be inspected / replayed locally
+        shutil.copytree("/tmp/roomscan_cache/links", WORK / "links_cache", dirs_exist_ok=True)
     for p in WORK.glob("extracted"):
         shutil.rmtree(p, ignore_errors=True)  # don't ship the inputs back
 
