@@ -8,6 +8,13 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Fixed (found from the user's website runs, 2026-10-03 10:53)
+- **Website rejected every LiDAR folder upload**: a Stray scan is 3–20k files and Starlette's form parser stops at
+  1000; the form is now parsed with a 200k limit (test uploads 1500 files).
+- New: run a capture **already on this computer** by path (folder, video or .zip; no upload; restricted to the home
+  folder): the fast path for the local showcase. Tested end to end on a spare server.
+
+
 ### Fixed
 - Photo loader skips hidden files (macOS `._*` AppleDouble copies would have been 'unreadable photo' warnings, and
   broke the first Kaggle run). Kaggle tars are built without them; DA3 installs on Kaggle's Python 3.13.x.

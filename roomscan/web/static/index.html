@@ -90,6 +90,9 @@ pre.log { font-family: var(--mono); font-size: .75rem; background: var(--paper);
         <input id="f-stray" type="file" webkitdirectory multiple hidden>
         <input id="f-zip" type="file" accept=".zip" hidden>
         <div class="selected" id="selected">Nothing selected.</div>
+        <label>…or a capture already on this computer (folder, video or .zip; no upload)
+          <input id="lpath" type="text" placeholder="e.g. ~/Downloads/house_photos or ~/scans/abc123.zip"></label>
+        <button id="b-local" type="button">Run from this path</button>
         <label>Name for this run <input id="label" type="text" placeholder="e.g. study, 8 photos 0.5x"></label>
         <label>Hardware profile <select id="profile"></select></label>
         <button class="primary" id="run" type="button" disabled>Run pipeline</button>
@@ -193,6 +196,22 @@ drop.ondrop = async (e) => {
     if (entry) await walk(entry, "");
   }
   if (out.length) setChosen(out, "dropped");
+};
+
+$("b-local").onclick = async () => {
+  const path = $("lpath").value.trim();
+  if (!path) return;
+  $("b-local").disabled = true;
+  try {
+    const { id } = await api("/api/jobs/local", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path, profile: $("profile").value, label: $("label").value }) });
+    $("lpath").value = ""; $("label").value = "";
+    await loadJobs(); show(id);
+  } catch (err) {
+    $("selected").textContent = `Could not start: ${err.message}`;
+  } finally {
+    $("b-local").disabled = false;
+  }
 };
 
 $("run").onclick = async () => {

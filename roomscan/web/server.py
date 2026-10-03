@@ -23,7 +23,7 @@ import uuid
 import zipfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from roomscan import __version__
@@ -99,11 +99,18 @@ class Runner(threading.Thread):
         jdir = self.store.root / jid
         out = jdir / "out"
         try:
-            cap, tier = find_capture(jdir / "input")
+            if job.get("local_path"):  # on-disk capture: the CLI resolves zips / wrapping folders and the tier
+                from roomscan.cli import detect_tier, resolve_capture
+
+                cap = resolve_capture(Path(job["local_path"]), out)
+                tier = detect_tier(cap)
+            else:
+                cap, tier = find_capture(jdir / "input")
         except Exception as e:  # noqa: BLE001
             self.store.update(jid, status="failed", error=str(e))
             return
-        self.store.update(jid, status="running", tier=tier, started=time.time(), capture=str(cap.relative_to(jdir)))
+        shown = str(cap.relative_to(jdir)) if jdir in cap.parents else str(cap)
+        self.store.update(jid, status="running", tier=tier, started=time.time(), capture=shown)
         cmd = [sys.executable, "-m", "roomscan.cli", "run", str(cap), "-o", str(out), "-p", job["profile"]]
         guard = CHECKOUT / "scripts/run_guarded.sh" if CHECKOUT else None
         if guard and guard.exists():
@@ -154,9 +161,14 @@ def create_app(root: Path | None = None) -> FastAPI:
                 "profiles": available_profiles(), "ground_truth": gt}
 
     @app.post("/api/jobs")
-    async def create_job(files: list[UploadFile] = File(...), paths: str = Form("[]"), profile: str = Form("auto"),
-                         label: str = Form("")):
-        rel = json.loads(paths)
+    async def create_job(request: Request):
+        # a Stray Scanner folder is 3-20k files; Starlette's default form limit (1000) rejected every LiDAR upload
+        form = await request.form(max_files=200_000, max_fields=200_000)
+        files = form.getlist("files")
+        if not files:
+            raise HTTPException(400, "no files uploaded")
+        rel = json.loads(form.get("paths") or "[]")
+        profile, label = form.get("profile") or "auto", form.get("label") or ""
         jid = time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4]
         inp = root / jid / "input"
         inp.mkdir(parents=True)
@@ -168,9 +180,25 @@ def create_app(root: Path | None = None) -> FastAPI:
             dest.parent.mkdir(parents=True, exist_ok=True)
             with dest.open("wb") as fh:
                 shutil.copyfileobj(f.file, fh)
-        store.jobs[jid] = {"id": jid, "label": label or (rel[0].split("/")[0] if rel else files[0].filename),
-                           "profile": profile, "status": "queued", "created": time.time(), "n_files": len(files),
-                           "pipeline_version": __version__}
+        return _queue(jid, label or (rel[0].split("/")[0] if rel else files[0].filename), profile, len(files))
+
+    @app.post("/api/jobs/local")
+    async def create_local_job(request: Request):
+        """Run a capture already on this machine (no upload): the local showcase path. Restricted to the user's home."""
+        body = await request.json()
+        path = Path(str(body.get("path", ""))).expanduser().resolve()
+        if not path.exists():
+            raise HTTPException(400, f"not found: {path}")
+        if Path.home().resolve() not in path.parents:
+            raise HTTPException(400, "only captures inside your home folder can be run")
+        jid = time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4]
+        (root / jid).mkdir(parents=True)
+        return _queue(jid, body.get("label") or path.name, body.get("profile") or "auto", None, str(path))
+
+    def _queue(jid, label, profile, n_files, local_path=None):
+        store.jobs[jid] = {"id": jid, "label": label, "profile": profile, "status": "queued", "created": time.time(),
+                           "n_files": n_files, "pipeline_version": __version__,
+                           **({"local_path": local_path} if local_path else {})}
         store.save()
         runner.q.put(jid)
         return {"id": jid}

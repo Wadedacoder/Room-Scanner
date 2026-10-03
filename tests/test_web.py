@@ -1,4 +1,6 @@
+import json
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -44,3 +46,21 @@ def test_info_endpoint(tmp_path):
     j = c.get("/api/info").json()
     assert j["auto_profile"] and "lite" in j["profiles"]
     assert c.get("/").status_code == 200
+
+
+def test_upload_accepts_a_stray_sized_folder(tmp_path):
+    """A Stray scan is thousands of files; Starlette's default form limit (1000) rejected every LiDAR upload."""
+    c = TestClient(create_app(tmp_path / "runs"))
+    n = 1500
+    files = [("files", (f"{i:06d}.png", b"x", "image/png")) for i in range(n)]
+    r = c.post("/api/jobs", files=files, data={"paths": json.dumps([f"scan/depth/{i:06d}.png" for i in range(n)]),
+                                               "label": "scan"})
+    assert r.status_code == 200, r.text
+    jid = r.json()["id"]
+    assert len(list((tmp_path / "runs" / jid / "input/scan/depth").iterdir())) == n
+
+
+def test_local_path_job_only_inside_home(tmp_path):
+    c = TestClient(create_app(tmp_path / "runs"))
+    assert c.post("/api/jobs/local", json={"path": "/etc"}).status_code == 400
+    assert c.post("/api/jobs/local", json={"path": str(Path.home() / "no-such-capture-xyz")}).status_code == 400
