@@ -62,9 +62,11 @@ def main() -> None:
         cap = caps / job["capture"]
         log = WORK / f"{job['capture']}.log"
         t = time.time()
-        cmd = [sys.executable, "-m", "roomscan.cli", "run", str(cap), "-o", str(out), *job.get("args", [])]
+        # /kaggle/input is read-only: run from a writable dir, model checkpoints in /tmp (not shipped back)
+        cmd = [sys.executable, "-m", "roomscan.cli", "run", str(cap), "-o", str(out), "-s",
+               "runtime.cache_dir=/tmp/roomscan_cache", *job.get("args", [])]
         with open(log, "w") as f:
-            rc = subprocess.run(cmd, env=env, cwd=code, stdout=f, stderr=subprocess.STDOUT).returncode
+            rc = subprocess.run(cmd, env=env, cwd="/tmp", stdout=f, stderr=subprocess.STDOUT, check=False).returncode
         summary.append({"capture": job["capture"], "args": job.get("args", []), "exit": rc,
                         "seconds": round(time.time() - t, 1)})
         print(summary[-1], flush=True)

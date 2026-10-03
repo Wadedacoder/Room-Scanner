@@ -21,12 +21,23 @@ from roomscan.stitch.links import Link
 cap, run_dir = Path(sys.argv[1]), Path(sys.argv[2])
 with_disk = "--with-disk" in sys.argv
 arr = np.load(run_dir / "links.npz")
+# MASt3R matches are in full-resolution photo pixels; the pipeline works on photos downscaled to <= 1920 px
+import pillow_heif
+from PIL import Image, ImageOps
+
+pillow_heif.register_heif_opener()
+_cap = cap if "cap" in dir() else Path("data/raw/photos/house_b_hall")
+_scale = {}
+for _room in sorted(d for d in _cap.iterdir() if d.is_dir()):
+    for _k, _f in enumerate(sorted(q for q in _room.iterdir() if not q.name.startswith("."))):
+        _w = max(ImageOps.exif_transpose(Image.open(_f)).size)
+        _scale[(_room.name, _k)] = min(1.0, 1920 / _w)
 mast3r = []
 for key in arr.files:
     a, b = key.split("|")
     (ra, pa), (rb, pb) = a.split("#"), b.split("#")
     m = arr[key]
-    mast3r.append(Link(ra, int(pa), rb, int(pb), m[:, :2].astype(np.float32), m[:, 2:].astype(np.float32), len(m)))
+    mast3r.append(Link(ra, int(pa), rb, int(pb), (m[:, :2] * _scale[(ra, int(pa))]).astype(np.float32), (m[:, 2:] * _scale[(rb, int(pb))]).astype(np.float32), len(m)))
 mast3r.sort(key=lambda L: -L.inliers)
 orig = links_mod.cross_room_links
 

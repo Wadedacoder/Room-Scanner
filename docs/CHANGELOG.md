@@ -8,6 +8,10 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Changed
+- Photo stitching rejects a link that would place a room over an already placed room (> 15% of the smaller room's
+  floor) and tries the room's other links (E31). With MASt3R matches: 5 of 7 house rooms connected (was 3).
+
 ### Fixed (found from the user's website runs, 2026-10-03 10:53)
 - **Website rejected every LiDAR folder upload**: a Stray scan is 3–20k files and Starlette's form parser stops at
   1000; the form is now parsed with a 200k limit (test uploads 1500 files).

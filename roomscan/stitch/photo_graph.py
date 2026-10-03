@@ -23,6 +23,7 @@ MIN_INLIERS = 30  # candidates; acceptance is the two-way agreement test below (
 MAX_YAW_DISAGREE_DEG = 10.0
 MAX_TILT_DEG = 15.0
 MAX_T_DISAGREE_M = 1.0
+MAX_OVERLAP_FRAC = 0.15  # of the smaller room's floor; allows wall-position error, not a room on top of another
 
 
 @dataclass
@@ -174,7 +175,7 @@ def place_rooms(frames: dict[str, RoomFrame], links, min_inliers: int = MIN_INLI
         degree[c["b"]] = degree.get(c["b"], 0) + c["pnp_inliers"]
     root = max(degree, key=degree.get)
     placed = {root: Placement(0.0, np.zeros(2))}
-    edges = []
+    edges, rejected = [], []
     changed = True
     while changed:
         changed = False
@@ -184,12 +185,40 @@ def place_rooms(frames: dict[str, RoomFrame], links, min_inliers: int = MIN_INLI
                 if p in placed and q not in placed:
                     yaw_s = _snap_yaw(yaw, frames[p].theta, frames[q].theta)
                     P = placed[p]
-                    placed[q] = Placement(P.yaw + yaw_s, P.t + _xz_rot(P.yaw) @ t, p, c)
+                    cand_pl = Placement(P.yaw + yaw_s, P.t + _xz_rot(P.yaw) @ t, p, c)
+                    # E31: rooms cannot share floor. A link that puts this room on top of a placed one is wrong
+                    # (repetitive texture can pass the match and agreement tests); try the room's other links.
+                    clash = _worst_overlap(frames, placed, q, cand_pl)
+                    if clash > MAX_OVERLAP_FRAC:
+                        rejected.append({"a": p, "b": q, "matches": c["matches"], "overlap": round(clash, 2)})
+                        continue
+                    placed[q] = cand_pl
                     edges.append({"a": p, "b": q, "matches": c["matches"], "pnp_inliers": c["pnp_inliers"],
                                   "yaw_disagree_deg": c["yaw_disagree_deg"], "tilt_deg": c["tilt_deg"],
                                   "yaw_snap_deg": round(float(np.degrees(yaw_s - yaw)), 1)})
                     changed = True
+    place_rooms.rejected = rejected  # for debug output
     return placed, edges
+
+
+def _room_xz(frame: RoomFrame, pl: Placement) -> np.ndarray:
+    """Room outline in the root room's x-z frame."""
+    xz = frame.polygon_uv @ p2.rot2(-frame.theta)
+    return (xz @ _xz_rot(pl.yaw).T) + pl.t
+
+
+def _worst_overlap(frames: dict, placed: dict, q: str, pl: Placement) -> float:
+    """Largest overlap of room q (at placement pl) with any placed room, as a fraction of the smaller room's area."""
+    from shapely.geometry import Polygon
+
+    A = Polygon(_room_xz(frames[q], pl)).buffer(0)
+    worst = 0.0
+    for r, plr in placed.items():
+        B = Polygon(_room_xz(frames[r], plr)).buffer(0)
+        small = min(A.area, B.area)
+        if small > 0:
+            worst = max(worst, A.intersection(B).area / small)
+    return worst
 
 
 def polygon_to_property(poly_uv: np.ndarray, frame: RoomFrame, pl: Placement, root_theta: float) -> np.ndarray:

@@ -98,3 +98,7 @@ for r in res[:30]:
     print(r, flush=True)
 (WORK / "links.json").write_text(json.dumps(res, indent=1))
 np.savez_compressed(WORK / "links.npz", **arrays)
+import shutil
+
+shutil.rmtree(jpg, ignore_errors=True)  # converted copies of the photos: don't ship them back
+shutil.rmtree(WORK / "extracted", ignore_errors=True)

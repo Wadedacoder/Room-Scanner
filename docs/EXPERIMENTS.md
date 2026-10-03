@@ -638,3 +638,30 @@ face the same missing-overlap problem.
 
 **Conclusion:** what connects rooms is capture, not model: one photo per doorway looking through into the next room
 (protocol step 6), or a continuous video walk. With the current photos, 3 of 6 rooms is what the evidence supports.
+
+## E31: MASt3R cross-room matching on a Kaggle GPU (2026-10-03)
+
+User: rooms are not coming together; use the Kaggle GPU (photos uploaded as a private dataset, user OK). Job
+`bench/kaggle/mast3r_links` (MASt3R ViT-L 512 metric, CC BY-NC-SA 4.0): every cross-room photo pair of
+`house_b_hall` (153 pairs, 19 photos, 7 rooms), dense reciprocal matching + fundamental-matrix MAGSAC. Placement
+locally with the pipeline's own 4-DoF PnP and two-way agreement (`bench/local/e31_mast3r_place.py`).
+
+| Pair | DISK+LightGlue verified | MASt3R verified |
+|---|---|---|
+| kitchen ↔ living | 99 | 372 |
+| bathroom ↔ hall | 27 | 336 |
+| hall ↔ living | 17 | 181 |
+| bedroom ↔ store | 25 | 142 |
+| hall ↔ study | 38 | 127 |
+
+* Bug on the way: MASt3R matches are in full-resolution pixels (4032 px); the pipeline's photos are downscaled to 1920,
+  so every pose first failed. Rescaled per photo: 12 links then agree both ways within 4° yaw.
+* With all 12 links: all 7 rooms connected, but several on top of each other (hall over bedroom, store over bathroom).
+  → New rule: **a link that puts a room over an already placed one by > 15% of the smaller room's floor is rejected**
+  (rooms cannot share floor; repetitive texture can pass the match tests). Result: **5 of 7 rooms connected**
+  (kitchen, living, bathroom, hall, study; DISK: 3 of 6), bedroom and store left unplaced rather than overlapping.
+  Figures: `docs/img/e31_before_plan.png`, `docs/img/e31_mast3r_plan.png`.
+* Correctness of the new placements is not verified: no tape of the layout. Some overlap within the 15% tolerance
+  remains (bathroom/hall/study corner).
+* Not yet in the pipeline: MASt3R needs a GPU and its licence is non-commercial; next step is a `mast3r` matcher
+  option for the Kaggle profile.
