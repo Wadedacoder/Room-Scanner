@@ -8,6 +8,12 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Health watch
+- 2026-10-03 09:24: the health check's test run took ~15 min (wall 934 s, CPU 49 s): the LiDAR end-to-end test
+  intermittently stalled at interpreter exit after passing, only under pytest. The real CLI exits cleanly (3/3 runs of
+  the same scan, 29–30 s each). The test now runs geometry only (`damage.backend=off`; damage has its own tests), and
+  the health check caps the test run at 240 s.
+
 ### Added
 - E27: rooms with two substantial ceiling levels (≥ 25% of the room, ≥ 15 cm apart) get a warning naming both
   heights (LiDAR c7d28f72c6: r2, r3).

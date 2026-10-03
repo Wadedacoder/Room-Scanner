@@ -10,10 +10,14 @@ warn() { echo "  warn  $1"; WARN=$((WARN+1)); }
 echo "health $(date '+%Y-%m-%d %H:%M:%S')"
 
 # 1. unit tests (fast; the end-to-end LiDAR test is skipped if data is missing)
-if PYTHONPATH=. .venv/bin/pytest -q -x >/tmp/health_pytest.txt 2>&1; then
+# hard cap: a stuck test must not stall the whole health watch (2026-10-03: one hung for ~15 min at exit)
+PYTHONPATH=. .venv/bin/pytest -q -x >/tmp/health_pytest.txt 2>&1 &
+TPID=$!; for _ in $(seq 1 240); do kill -0 $TPID 2>/dev/null || break; sleep 1; done
+if kill -0 $TPID 2>/dev/null; then kill -9 $TPID; echo "TIMEOUT: tests still running after 240 s" >>/tmp/health_pytest.txt; fi
+if wait $TPID && ! grep -q TIMEOUT /tmp/health_pytest.txt; then
   ok "tests: $(tail -1 /tmp/health_pytest.txt | sed 's/\x1b\[[0-9;]*m//g')"
 else
-  bad "tests: $(grep -E 'FAILED|Error' /tmp/health_pytest.txt | head -2 | tr '\n' ' ')"
+  bad "tests: $(grep -E 'FAILED|Error|TIMEOUT' /tmp/health_pytest.txt | head -2 | tr '\n' ' ')"
 fi
 
 # 2. test website answers
