@@ -12,7 +12,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | 0.2 | Door/opening detection on photo rooms (works on LiDAR) | P2 openings, stitch | ✅ every room has an opening (E15); widths ⏸ door tape |
 | 0.3 | Full-house photo run hangs (each room alone 10–13 s) | walk-in | ✅ not reproduced after offline-first loading (47.7 s) |
 | 0.4 | Place rooms from strong cross-room visual links (DISK+LightGlue + PnP) | P2 photo stitch | ✅ v0.6.0 (kitchen↔living) |
-| 0.5 | Door-geometry matching for rooms without a visual link; adjacency; overlap check | P2 photo stitch | 🟨 shared-wall + door alignment for linked rooms done; unlinked rooms ⏸ look-through capture |
+| 0.5 | Door-geometry matching for rooms without a visual link; adjacency; overlap check | P2 photo stitch | ✅ linked rooms: shared-wall snap, door alignment, door pairing; unlinked rooms: no unique door fit on house_b (E25), ⏸ look-through capture |
 | 0.6 | Connected plan in plan.json (`adjacency`, global polygons) + SVG for photo, video, LiDAR | P2 | ✅ photo (3/6 linked), LiDAR (E19), video openings + adjacency (E21) |
 | 0.7 | Protocol: one photo per doorway looking through it into the next room (E14 evidence) | P1 | ✅ (needs a new capture to verify ⏸) |
 
@@ -48,9 +48,9 @@ Legend: ⬜ todo · 🟨 in progress · ✅ done · ⏸ blocked on user
 | 4.1 | Fix loop: declare worst gate (number, cause, prediction) BEFORE fixing; before/after regenerable | P4 (25%) | ✅ fixloop/ (video study −35.8% → −4.0%) |
 | 4.2 | Head-to-head vs magicplan on 2 rooms | P3 (10%) | ✖ not possible: no Pro iPhone available (user, 2026-10-03) |
 | 4.3 | Device matrix | D2 | ✅ docs/DEVICE_MATRIX.md |
-| 4.4 | Benchmark report (gates per tier, repeatability, timing) | D5 | 🟨 docs/BENCHMARK.md drafted; video house row waits on E21 |
+| 4.4 | Benchmark report (gates per tier, repeatability, timing) | D5 | ✅ docs/BENCHMARK.md (gates, repeatability, calibration, drift, connected plans, timing, clean machine, sweep) |
 | 4.5 | Technical report ≤ 6 pages | D7 | ✅ draft docs/TECH_REPORT.md (update when E21 + tape land) |
-| 4.6 | Raw data release + fetch script | D8 | 🟨 tooling done; home captures stay private (user decision 2026-10-03); public part = case-study LiDAR scans only |
+| 4.6 | Raw data release + fetch script | D8 | 🟨 tooling done; home captures stay private (user decision 2026-10-03); case-study LiDAR scans are the brief's own data (graders have them), so nothing is uploaded |
 | 4.7 | Clean-machine test: README to a result in < 15 min | D3 | ✅ ≈ 10 min, empty caches (BENCHMARK §5b); found + fixed 2 bugs |
 
 ## Waiting on the user / not available
