@@ -9,6 +9,15 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 ## [Unreleased]
 
 ### Added
+- `recon.photo_matcher: mast3r`: MASt3R dense cross-room matching as a pipeline option (needs the naver/mast3r repo
+  via `$MAST3R_REPO` and a GPU; CC BY-NC-SA 4.0, non-commercial; checkpointed like the DISK links). The Kaggle runner
+  installs it when a job asks for it. Default stays DISK+LightGlue (runs on the laptop, Apache-2.0).
+
+### Health watch
+- 2026-10-03 14:41 FAIL (job > 20 min): the user's own website run from 10:53 (a Stray scan's rgb.mp4 sent as a
+  video) is still progressing (log growing) after ~3.8 h, slowed by the Mac sleeping; left running, not killed.
+
+### Added
 - E30: DA3-Giant on Kaggle vs Base on all study captures: steadier on off-protocol sets but +5–10% scale bias and worse
   on the protocol capture (area +10.0% vs +0.7%); default stays Base.
 

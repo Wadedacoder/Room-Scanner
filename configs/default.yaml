@@ -37,6 +37,7 @@ recon:                      # learned geometry for the photo and video tiers (se
   video_keyframes: 60       # keyframes sampled from a walkthrough clip
   window_overlap: 2         # shared views between consecutive windows
   photo_stitch: true        # link photo rooms through photos that see into each other (E14, roomscan/stitch)
+  photo_matcher: disk_lightglue  # disk_lightglue | mast3r (GPU; CC BY-NC-SA; E31: 5/7 vs 3/6 house rooms linked)
   photo_outline: walls      # walls (flood inside observed walls) | box (outermost long wall lines, E13)
   video_join_pieces: true   # fix loop: join COLMAP pieces through fast turns (false = largest piece only)
   video_fps: 8.0            # frames per second sampled for camera tracking (COLMAP)

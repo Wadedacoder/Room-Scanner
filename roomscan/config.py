@@ -115,6 +115,8 @@ def _validate(cfg: dict) -> None:
         raise ConfigError("recon.image_long_side must be a multiple of 14 (ViT patch size)")
     if cfg["runtime"]["device"] not in {"auto", "cpu", "mps", "cuda"}:
         raise ConfigError("runtime.device must be auto|cpu|mps|cuda")
+    if cfg["recon"]["photo_matcher"] not in {"disk_lightglue", "mast3r"}:
+        raise ConfigError("recon.photo_matcher must be disk_lightglue|mast3r")
     if cfg["recon"]["photo_outline"] not in {"walls", "box"}:
         raise ConfigError("recon.photo_outline must be walls|box")
     if cfg["recon"]["video_matcher"] not in {"sequential", "exhaustive"}:

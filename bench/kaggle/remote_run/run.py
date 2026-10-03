@@ -54,8 +54,10 @@ def main() -> None:
     sh("pip install -q pillow-heif typer rich jsonschema pycolmap kornia imageio-ffmpeg 'shapely>=2'")
     sh(f"pip install -q --no-deps --ignore-requires-python git+https://github.com/ByteDance-Seed/depth-anything-3@{DA3_COMMIT}")  # pins <=3.13; Kaggle is 3.13.x
     sh("pip install -q addict einops omegaconf evo plyfile 'moviepy==1.0.3' safetensors huggingface_hub")
+    if any("photo_matcher=mast3r" in a for j in json.loads((caps / "jobs.json").read_text()) for a in j.get("args", [])):
+        sh("git clone -q --recursive https://github.com/naver/mast3r /tmp/mast3r && pip install -q roma")
     print(f"setup {time.time() - t0:.0f} s", flush=True)
-    env = os.environ | {"PYTHONPATH": str(code)}
+    env = os.environ | {"PYTHONPATH": str(code), "MAST3R_REPO": "/tmp/mast3r"}
     out = WORK / "out"
     summary = []
     for job in json.loads((caps / "jobs.json").read_text()):
