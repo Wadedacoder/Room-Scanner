@@ -8,6 +8,13 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-03 · walk-in robustness, calibrated photo intervals (E26), runbook · tag `v0.8.1`
+
+### Changed
+- Lint: ruff safe fixes across roomscan/, tests/, bench/, scripts/ (imports, annotations, f-strings); 99 → 14 findings
+  (the rest are style, reviewed).
+- `docs/WALKIN.md`: walk-in runbook. Capture protocol: photos/video need any iPhone with a 0.5x lens (11 or newer).
+
 ### Changed (E26: interval calibration on every capture of the taped study)
 - Photo scale term by protocol compliance: 5% for protocol rooms, **15% for off-protocol rooms** (1x lens, portrait,
   < 4 photos; warned), 25% without EXIF focal. Photo coverage: short side 3/12 → 8/10, area 7/12 → 9/10.

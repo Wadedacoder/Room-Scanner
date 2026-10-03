@@ -19,7 +19,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "bench"))
-from gates import ground_truth  # noqa: E402
+from gates import ground_truth
 
 
 def side_walls(room: dict) -> tuple[dict, dict]:

@@ -27,7 +27,7 @@ BUNDLE = ROOT / "data/derived/eval_bundle"
 OUT = ROOT / "runs/e4_colmap"
 
 
-from e4_score import ang, score, umeyama  # noqa: E402,F401
+from e4_score import ang, score, umeyama  # noqa: F401
 
 
 def run(set_name: str, max_size: int) -> dict:

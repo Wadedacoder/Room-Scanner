@@ -45,7 +45,7 @@ class StrayCapture:
     root: Path
 
     @classmethod
-    def open(cls, root: str | Path) -> "StrayCapture":
+    def open(cls, root: str | Path) -> StrayCapture:
         root = Path(root)
         missing = [n for n in ("odometry.csv", "camera_matrix.csv", "depth") if not (root / n).exists()]
         if missing:

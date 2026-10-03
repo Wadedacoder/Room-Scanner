@@ -6,14 +6,14 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from roomscan.config import load_config  # noqa: E402
-from roomscan.geometry.cloud import find_levels  # noqa: E402
-from roomscan.io.photos import load_room  # noqa: E402
-from roomscan.pipeline.backend import PHOTO_ERR, rooms_from_cloud  # noqa: E402
-from roomscan.pipeline.photos import VOXEL, reconstruct_room, wall_rays  # noqa: E402
-from roomscan.recon.learned import LearnedRecon, voxelize  # noqa: E402
-from roomscan.stitch.links import cross_room_links  # noqa: E402
-from roomscan.stitch.photo_graph import RoomFrame, _relative_pose  # noqa: E402
+from roomscan.config import load_config
+from roomscan.geometry.cloud import find_levels
+from roomscan.io.photos import load_room
+from roomscan.pipeline.backend import PHOTO_ERR, rooms_from_cloud
+from roomscan.pipeline.photos import VOXEL, reconstruct_room, wall_rays
+from roomscan.recon.learned import LearnedRecon, voxelize
+from roomscan.stitch.links import cross_room_links
+from roomscan.stitch.photo_graph import RoomFrame, _relative_pose
 
 capture = sys.argv[1] if len(sys.argv) > 1 else "house_b_hall"
 rooms = sys.argv[2:] or ["bathroom", "living", "hall", "study"]

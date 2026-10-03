@@ -21,9 +21,9 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from make_photo_tier import frame_angles, read_frames, save_jpeg, upright  # noqa: E402
+from make_photo_tier import frame_angles, read_frames, save_jpeg, upright
 
-from roomscan.io.stray import StrayCapture  # noqa: E402
+from roomscan.io.stray import StrayCapture
 
 ROOT = Path(__file__).resolve().parents[1]
 

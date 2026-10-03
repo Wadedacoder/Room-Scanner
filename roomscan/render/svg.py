@@ -23,7 +23,7 @@ def render_svg(plan: dict, px_per_m: float = 80.0, margin: float = 1.0) -> str:
         return (p[0] - lo[0]) * px_per_m, H - (p[1] - lo[1]) * px_per_m
 
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W:.0f}" height="{H:.0f}" viewBox="0 0 {W:.0f} {H:.0f}" '
-           'font-family="Helvetica, Arial, sans-serif">', f'<rect width="100%" height="100%" fill="#ffffff"/>']
+           'font-family="Helvetica, Arial, sans-serif">', '<rect width="100%" height="100%" fill="#ffffff"/>']
     for k, r in enumerate(plan["rooms"]):
         c = PALETTE[k % len(PALETTE)]
         poly = " ".join(f"{x:.1f},{y:.1f}" for x, y in map(xy, r["polygon"]))

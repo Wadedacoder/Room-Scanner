@@ -21,7 +21,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "bench"))
-from gates import ground_truth, score  # noqa: E402
+from gates import ground_truth, score
 
 
 def run_once(capture: Path, out: Path, limit_mb: int) -> dict:

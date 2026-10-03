@@ -4,9 +4,9 @@ import pytest
 
 pytest.importorskip("fastapi")
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from roomscan.web.server import create_app, find_capture  # noqa: E402
+from roomscan.web.server import create_app, find_capture
 
 
 def test_find_capture_photo_folder(tmp_path):

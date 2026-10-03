@@ -74,7 +74,7 @@ def _relative_pose(A: RoomFrame, ia: int, B: RoomFrame, jb: int, pts_a: np.ndarr
     T_AB = pose_j_in_A @ np.linalg.inv(B.c2w[jb])
     yaw = float(np.arctan2(T_AB[0, 2], T_AB[0, 0]))  # rotation about +Y
     tilt = float(np.degrees(np.arccos(np.clip(T_AB[1, 1], -1, 1))))
-    return yaw, T_AB[[0, 2], 3].copy(), int(len(inl)), tilt
+    return yaw, T_AB[[0, 2], 3].copy(), len(inl), tilt
 
 
 def _snap_yaw(yaw: float, theta_a: float, theta_b: float) -> float:

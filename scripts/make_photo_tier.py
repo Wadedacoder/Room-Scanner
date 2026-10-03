@@ -21,8 +21,8 @@ Usage: python scripts/make_photo_tier.py data/raw/lidar/c00a170fe1 --rooms bench
 from __future__ import annotations
 
 import argparse
-import sys
 import json
+import sys
 from pathlib import Path
 
 import cv2
@@ -32,7 +32,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))  # run from a checkout without relying on the editable install's .pth
-from roomscan.io.stray import StrayCapture  # noqa: E402
+from roomscan.io.stray import StrayCapture
 
 
 def frame_angles(T: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

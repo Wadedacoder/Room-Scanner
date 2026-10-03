@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 import typer
 
-from roomscan.config import ConfigError, available_profiles, detect_hardware, load_config, auto_profile
+from roomscan.config import ConfigError, auto_profile, available_profiles, detect_hardware, load_config
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -17,7 +16,7 @@ ConfigOpt = typer.Option(None, "--config", "-c", help="YAML file layered over th
 SetOpt = typer.Option(None, "--set", "-s", help="override a single key, e.g. -s recon.max_views=16")
 
 
-def _load(profile: str, config: Optional[Path], overrides: Optional[list[str]]):
+def _load(profile: str, config: Path | None, overrides: list[str] | None):
     try:
         return load_config(profile, config, overrides)
     except ConfigError as e:
@@ -75,7 +74,7 @@ def hw():
 
 
 @app.command()
-def config(profile: str = ProfileOpt, config: Optional[Path] = ConfigOpt, set_: Optional[list[str]] = SetOpt):
+def config(profile: str = ProfileOpt, config: Path | None = ConfigOpt, set_: list[str] | None = SetOpt):
     """Print the fully resolved config."""
     typer.echo(_load(profile, config, set_).dump())
 
@@ -98,8 +97,8 @@ def run(
     out: Path = typer.Option(Path("out"), "-o"),
     tier: str = "auto",
     profile: str = ProfileOpt,
-    config: Optional[Path] = ConfigOpt,
-    set_: Optional[list[str]] = SetOpt,
+    config: Path | None = ConfigOpt,
+    set_: list[str] | None = SetOpt,
 ):
     """Capture -> plan.json (schema/plan.schema.json) + plan.svg."""
     capture = resolve_capture(capture, out)

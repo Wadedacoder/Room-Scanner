@@ -17,9 +17,8 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import Image, ImageOps
-
 import pillow_heif
+from PIL import Image, ImageOps
 
 pillow_heif.register_heif_opener()
 ROOT = Path(__file__).resolve().parents[2]
@@ -46,8 +45,8 @@ def verify(pi: np.ndarray, pj: np.ndarray) -> int:
 
 
 def lightglue_matches(items):
-    import torch
     import kornia.feature as KF
+    import torch
 
     # DISK at 1024 px exceeded the 3.2 GB MPS cap; on CPU it took ~1 min per image. The user allows a 6 GB total
     # budget, so MPS with a 4.5 GB cap (0.85 of the 5.33 GB working set), leaving ~1.5 GB for the process + macOS headroom.

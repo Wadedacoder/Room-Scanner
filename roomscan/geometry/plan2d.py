@@ -245,14 +245,14 @@ def fit_wall(axis: int, c: float, s: float, e: float, wall_uv: np.ndarray, insid
     m = (along > lo + 0.1) & (along < hi - 0.1) & (rel > -0.15) & (rel < 0.10)
     pts = across[m]
     if len(pts) < 50:
-        return WallFit(axis, c, 0.05, int(len(pts)))
+        return WallFit(axis, c, 0.05, len(pts))
     # wall surface = densest 1 cm layer in that window
     h, edges = np.histogram(pts, np.arange(c - search, c + search + 0.01, 0.01))
     peak = edges[np.argmax(h)] + 0.005
     layer = pts[np.abs(pts - peak) < 0.02]
     pos = float(np.median(layer))
     sigma = float(1.2533 * layer.std() / np.sqrt(len(layer)))
-    return WallFit(axis, pos, sigma, int(len(layer)))
+    return WallFit(axis, pos, sigma, len(layer))
 
 
 def room_geometry(mask: np.ndarray, grid: Grid, wall_uv: np.ndarray, others: np.ndarray | None = None) -> RoomGeom:

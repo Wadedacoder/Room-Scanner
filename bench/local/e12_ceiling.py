@@ -19,10 +19,10 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from roomscan.config import load_config  # noqa: E402
-from roomscan.geometry.cloud import find_levels  # noqa: E402
-from roomscan.io.photos import load_room  # noqa: E402
-from roomscan.recon.learned import Recon, backproject, gravity_align, voxelize  # noqa: E402
+from roomscan.config import load_config
+from roomscan.geometry.cloud import find_levels
+from roomscan.io.photos import load_room
+from roomscan.recon.learned import Recon, backproject, gravity_align, voxelize
 
 OUT = ROOT / "runs/e12"
 ROOMS = ["study", "kitchen", "living", "bedroom", "bathroom", "store"]

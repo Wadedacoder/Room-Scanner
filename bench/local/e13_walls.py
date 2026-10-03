@@ -19,13 +19,13 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "bench/local"))
 
-from e12_ceiling import ROOMS, get_recon  # noqa: E402
+from e12_ceiling import ROOMS, get_recon
 
-from roomscan.geometry import plan2d as p2  # noqa: E402
-from roomscan.geometry.cloud import find_levels  # noqa: E402
-from roomscan.pipeline.backend import PHOTO_ERR, rooms_from_cloud  # noqa: E402
-from roomscan.pipeline.photos import VOXEL, wall_rays  # noqa: E402
-from roomscan.recon.learned import backproject, gravity_align, voxelize  # noqa: E402
+from roomscan.geometry import plan2d as p2
+from roomscan.geometry.cloud import find_levels
+from roomscan.pipeline.backend import PHOTO_ERR, rooms_from_cloud
+from roomscan.pipeline.photos import VOXEL, wall_rays
+from roomscan.recon.learned import backproject, gravity_align, voxelize
 
 OUT = ROOT / "runs/e13"
 

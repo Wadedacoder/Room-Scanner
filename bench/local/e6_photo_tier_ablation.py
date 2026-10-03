@@ -21,11 +21,11 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from roomscan.config import load_config  # noqa: E402
-from roomscan.geometry.cloud import find_levels  # noqa: E402
-from roomscan.pipeline.backend import PHOTO_ERR, rooms_from_cloud  # noqa: E402
-from roomscan.pipeline.photos import VOXEL, wall_rays  # noqa: E402
-from roomscan.recon.learned import Recon, backproject, gravity_align, voxelize  # noqa: E402
+from roomscan.config import load_config
+from roomscan.geometry.cloud import find_levels
+from roomscan.pipeline.backend import PHOTO_ERR, rooms_from_cloud
+from roomscan.pipeline.photos import VOXEL, wall_rays
+from roomscan.recon.learned import Recon, backproject, gravity_align, voxelize
 
 LIDAR_AREA = {"living": 7.41, "corridor": 8.35, "bathroom": 5.62}  # LiDAR tier, runs/tier_compare (r1, r2, r3)
 OUT = ROOT / "runs/e6"

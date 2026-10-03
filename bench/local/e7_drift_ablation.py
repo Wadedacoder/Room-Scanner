@@ -20,10 +20,10 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from roomscan.config import load_config  # noqa: E402
-from roomscan.geometry import plan2d as p2  # noqa: E402
-from roomscan.pipeline.lidar import run_lidar  # noqa: E402
-from roomscan.render.svg import render_svg  # noqa: E402
+from roomscan.config import load_config
+from roomscan.geometry import plan2d as p2
+from roomscan.pipeline.lidar import run_lidar
+from roomscan.render.svg import render_svg
 
 OUT = ROOT / "runs/e7_drift"
 CAPTURES = ["c7d28f72c6", "1a8384c3f6"]

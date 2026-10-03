@@ -58,8 +58,8 @@ def _cross_room_links_live(rooms: dict[str, list[np.ndarray]], cfg, long_side: i
                            n_feat: int = 2048) -> list[Link]:
     """rooms: name -> list of RGB photos (original resolution). Returns verified matches for every cross-room photo
     pair, strongest first."""
-    import torch
     import kornia.feature as KF
+    import torch
 
     dev = cfg["runtime"]["device"]
     dev = dev if (dev != "mps" or torch.backends.mps.is_available()) else "cpu"
