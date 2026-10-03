@@ -8,6 +8,10 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Added
+- E30: DA3-Giant on Kaggle vs Base on all study captures: steadier on off-protocol sets but +5–10% scale bias and worse
+  on the protocol capture (area +10.0% vs +0.7%); default stays Base.
+
 ### Changed
 - Photo stitching rejects a link that would place a room over an already placed room (> 15% of the smaller room's
   floor) and tries the room's other links (E31). With MASt3R matches: 5 of 7 house rooms connected (was 3).

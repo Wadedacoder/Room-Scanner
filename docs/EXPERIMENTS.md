@@ -665,3 +665,23 @@ locally with the pipeline's own 4-DoF PnP and two-way agreement (`bench/local/e3
   remains (bathroom/hall/study corner).
 * Not yet in the pipeline: MASt3R needs a GPU and its licence is non-commercial; next step is a `mast3r` matcher
   option for the Kaggle profile.
+
+## E30: DA3-Giant (Kaggle T4) vs DA3-Base (laptop) on every capture of the taped study (2026-10-03)
+
+`scripts/kaggle_run.sh -p cuda-16gb` (DA3-Giant-1.1 fp16, 4 views per window, DA3Metric-Large) on all 11 photo
+captures; scored with `bench/calibration.py` (`bench/results/calibration_study_giant.json`) against E26 (Base, lite).
+
+| | Base (lite, laptop) | Giant (cuda-16gb, Kaggle) |
+|---|---|---|
+| protocol capture (house_b study): short / long / area | −1.6% / +4.5% / **+0.7%** | +5.3% / +4.5% / **+10.0%** |
+| protocol capture: ceiling | −0.7% (−2.0 cm) | −1.8% (−5 cm) |
+| off-protocol sets, short side (excl. the −73…−79% portrait-1× failure) | −20.5 … +15.5%, RMS ≈ 14% | −20.5 … +10.8%, RMS ≈ 10%, mostly +5…+11% |
+| interval coverage short / long / area | 8/10, 9/10, 9/10 | 9/11, 9/11, 9/11 |
+| house_b rooms linked (DISK) | 3 of 6 | 3 of 6 |
+| runtime | 109 s house live (M1) | 265 s house incl. first model load (T4) |
+
+* Giant is steadier across bad captures but carries a consistent **+5 … +10% scale over-estimate**, and is worse on
+  the protocol capture (area +10.0%, on the ±10% gate). The bias could be calibrated, but from one taped room that
+  would be fitting the test.
+* **Default stays Base** (laptop, protocol captures). Giant stays available via the Kaggle profile; its intervals
+  hold (9/11) so it is safe to use, just not better where it matters.
