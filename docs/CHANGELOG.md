@@ -8,6 +8,11 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Added
+- `scripts/kaggle_run.sh`: run the pipeline on a Kaggle T4 (16 GB) with any profile and download plan.json/plan.svg;
+  code and captures go up as **private** datasets (user OK for the demo, 2026-10-03). Kernel: bench/kaggle/remote_run.
+- bench/kaggle/mast3r_links + bench/local/e31_mast3r_place.py: MASt3R cross-room matching (E31).
+
 ### Changed
 - Photo stitching solves cross-room links with gravity known on both sides (4-DoF: yaw + offset) and checks that
   both directions agree in yaw and offset (E28). Same 3/6 rooms linked on house_b; no new reliable links exist.

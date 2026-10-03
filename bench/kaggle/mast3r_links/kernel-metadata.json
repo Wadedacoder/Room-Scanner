@@ -1,0 +1,13 @@
+{
+  "id": "devmsjsj/roomscan-mast3r-links",
+  "title": "roomscan-mast3r-links",
+  "code_file": "run.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["devmsjsj/roomscan-captures"],
+  "competition_sources": [],
+  "kernel_sources": []
+}
