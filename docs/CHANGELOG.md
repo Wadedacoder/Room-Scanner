@@ -8,6 +8,10 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Fixed
+- Photo loader skips hidden files (macOS `._*` AppleDouble copies would have been 'unreadable photo' warnings, and
+  broke the first Kaggle run). Kaggle tars are built without them; DA3 installs on Kaggle's Python 3.13.x.
+
 ### Added
 - `scripts/kaggle_run.sh`: run the pipeline on a Kaggle T4 (16 GB) with any profile and download plan.json/plan.svg;
   code and captures go up as **private** datasets (user OK for the demo, 2026-10-03). Kernel: bench/kaggle/remote_run.

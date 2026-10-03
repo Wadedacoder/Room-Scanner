@@ -52,7 +52,7 @@ jpg = WORK / "jpg"
 jpg.mkdir(exist_ok=True)
 items = []  # (room, index, path, original (w, h))
 for r in rooms:
-    for k, p in enumerate(sorted(r.iterdir())):
+    for k, p in enumerate(sorted(q for q in r.iterdir() if not q.name.startswith("."))):
         im = ImageOps.exif_transpose(Image.open(p)).convert("RGB")
         out = jpg / f"{r.name}_{k}.jpg"
         im.save(out, quality=92)

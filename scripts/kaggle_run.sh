@@ -29,7 +29,8 @@ stage() {  # $1 slug, $2 dir containing the tar
 }
 
 # code: package + the configs and schema it reads at the repo root
-tar --exclude='__pycache__' -cf "$STAGE/code/roomscan-code.tar" roomscan configs schema
+export COPYFILE_DISABLE=1  # no macOS ._ AppleDouble files in the tars
+tar --exclude='__pycache__' --exclude='._*' -cf "$STAGE/code/roomscan-code.tar" roomscan configs schema
 # captures (symlinks followed) + the job list
 python3 - "$PROFILE" "$STAGE/caps/captures" "${CAPS[@]}" -- "${EXTRA[@]+"${EXTRA[@]}"}" <<'PY'
 import json, shutil, sys
@@ -46,7 +47,7 @@ for c in caps:
 (dest / "jobs.json").write_text(json.dumps(jobs, indent=1))
 print(f"staged {len(jobs)} capture(s), profile {profile}, extra {extra}")
 PY
-tar -chf "$STAGE/caps/roomscan-captures.tar" -C "$STAGE/caps" captures && rm -rf "$STAGE/caps/captures"
+tar --exclude='._*' --exclude='.DS_Store' -chf "$STAGE/caps/roomscan-captures.tar" -C "$STAGE/caps" captures && rm -rf "$STAGE/caps/captures"
 stage roomscan-code "$STAGE/code"
 stage roomscan-captures "$STAGE/caps"
 

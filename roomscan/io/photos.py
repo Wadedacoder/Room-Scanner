@@ -49,7 +49,7 @@ def load_room(folder: Path, max_side: int = 1920, warnings: list[str] | None = N
               files: list[Path] | None = None) -> list[Photo]:
     warnings = warnings if warnings is not None else []
     out = []
-    for p in files or sorted(f for f in folder.iterdir() if f.suffix.lower() in IMG_EXT):
+    for p in files or sorted(f for f in folder.iterdir() if f.suffix.lower() in IMG_EXT and not f.name.startswith(".")):
         try:
             raw = Image.open(p)
             up = ImageOps.exif_transpose(raw).convert("RGB")
@@ -75,7 +75,7 @@ def load_capture(root: Path, warnings: list[str] | None = None) -> dict[str, lis
     warnings = warnings if warnings is not None else []
     root = Path(root)
     rooms = sorted(d for d in root.iterdir() if d.is_dir() and not d.name.startswith((".", "_")))
-    loose = sorted(f for f in root.iterdir() if f.suffix.lower() in IMG_EXT)
+    loose = sorted(f for f in root.iterdir() if f.suffix.lower() in IMG_EXT and not f.name.startswith("."))
     out = {}
     if loose:
         if rooms:
