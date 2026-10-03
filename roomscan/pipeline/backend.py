@@ -54,6 +54,22 @@ def room_ceiling(P_room_y: np.ndarray, floor: float, room_area: float, voxel: fl
     return float(np.median(layer)), float(1.2533 * layer.std() / np.sqrt(len(layer)))
 
 
+def second_ceiling(P_room_y: np.ndarray, floor: float, room_area: float, voxel: float, main: float,
+                   res: float = 0.05, min_frac: float = 0.25) -> float | None:
+    """Another flat level >= 15 cm from the main ceiling covering >= min_frac of the room (E27: a 27 m2 LiDAR room
+    with most of its ceiling at 2.40 m and ~8 m2 at 3.05 m: a lowered section, or the outline reaching under a
+    neighbour's higher ceiling). The schema holds one ceiling per room, so this becomes a warning."""
+    h = P_room_y - floor
+    up = h[(h > 1.9) & (h < 4.0) & (np.abs(h - main) > 0.15)]
+    if len(up) < 200:
+        return None
+    hist, e = np.histogram(up, np.arange(1.9, 4.0 + res, res))
+    k = int(np.argmax(hist))
+    lev = e[k] + res / 2
+    layer = up[np.abs(up - lev) < 0.03]
+    return float(np.median(layer)) if len(layer) * voxel * voxel >= min_frac * room_area else None
+
+
 @dataclass
 class BackendResult:
     rooms: list[dict]
@@ -166,6 +182,10 @@ def rooms_from_cloud(P: np.ndarray, cam_xyz: np.ndarray, rays, err: ErrorModel, 
             warnings.append(f"{rid}: ceiling not observed well enough to measure; no value reported")
         else:
             c, cs = ceil
+            c2 = second_ceiling(P[inside, 1], lev.floor, area, voxel, c)
+            if c2 is not None:
+                warnings.append(f"{rid}: two ceiling levels, {c:.2f} m (reported, most of the room) and {c2:.2f} m "
+                                "over part of it (a lowered section, or the outline reaches under a neighbour's ceiling)")
             room["ceiling_height"] = meas(c, float(np.sqrt(cs ** 2 + lev.floor_sigma ** 2 + 2 * err.abs_m ** 2
                                                             + (err.rel * c) ** 2)), "m")
         rooms.append(room)

@@ -8,6 +8,10 @@ Format per entry: **Change** · **Why** (the evidence that prompted it) · **How
 
 ## [Unreleased]
 
+### Added
+- E27: rooms with two substantial ceiling levels (≥ 25% of the room, ≥ 15 cm apart) get a warning naming both
+  heights (LiDAR c7d28f72c6: r2, r3).
+
 ## [0.8.1] - 2026-10-03 · walk-in robustness, calibrated photo intervals (E26), runbook · tag `v0.8.1`
 
 ### Changed

@@ -596,3 +596,14 @@ degenerate captures. A rule that refuses to report with fewer than 4 photos woul
 brief values a measurement with an honest interval over none, and the warning already names the problem.
 
 Also found: `-s damage.backend=off` was rejected (YAML reads `off` as false); normalised like `drift.method`.
+
+## E27: LiDAR ceilings differ by 0.8 m between rooms. Real? (2026-10-03)
+
+`c7d28f72c6` reports ceilings of 2.95 / 3.07 / 2.43 / 2.27 / 2.34 m. Height histograms of each room's cloud (5 cm bins
+over 1.9–4 m) show each reported value is a strong flat layer, i.e. not an estimator failure: two rooms at ~3.0 m, the
+two small rooms (bathroom-sized, 3.6 / 5.9 m²) at ~2.3 m (dropped ceilings), and the 27 m² room mostly at 2.40 m. But
+two rooms also hold a large second level: r3 has ~8 m² at 3.05 m, r2 a large layer at 2.45 m. Either part of the room
+has a lowered ceiling or soffit, or the room outline reaches under a neighbour's ceiling. Without the space this can't
+be resolved, and the schema holds one ceiling per room.
+→ A second flat level ≥ 15 cm from the reported one and covering ≥ 25% of the room is now reported as a warning with
+both heights (r2, r3 here). The house_b photo plan is unchanged (no second levels).
