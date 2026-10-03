@@ -20,9 +20,10 @@ comes from `docs/EXPERIMENTS.md`; where nothing has been measured, the cell says
 
 | Tier | Walls | Floor area | Ceiling | Interval holds truth | Source |
 |---|---|---|---|---|---|
-| Photos, protocol capture (0.5× landscape, 4 photos of the study) | −1.6% / +4.5% | +0.7% | −2.0 cm | area ✅, ceiling ✅ | E11, E12, `bench/gates.py` |
-| Photos, off-protocol (portrait / mixed lenses, 2–7 photos) | −90% … +54% (area) | | | 2 of 6 | E8 |
-| Video, off-protocol (1× lens, fast turns, 34 s study walk) | −4.0% / −6.9% | −10.8% | not observed | area ✅ | E10, fix loop (`fixloop/`) |
+| Photos, protocol capture (0.5× landscape, 4 photos of the study) | −1.6% / +4.5% | +0.7% | −2.0 cm | walls ✅ area ✅ ceiling ✅ | E11, E12, E26 |
+| Photos, off-protocol (1× / portrait / mixed lenses / 2–3 photos; 9 sets of the study) | short side −20.5% … +15.5% (one −79%) | −31% … +27% | 2 sets observed | short 7/9, long 8/9, area 8/9 (widened ±15% term) | E26 |
+| Video, off-protocol (1× lens, fast turns, 34 s study walk) | −4.0% / −6.9% | −10.8% | not observed | walls ✅ area ✅ (measured scale term, E21) | E10, fix loop, E21 |
+| Video, whole house (0.5×, 212 s walk, 6 rooms) | no tape | 3 merged rooms instead of 6 | not observed | wide intervals, not usable | E21 |
 | LiDAR | not measured against tape | not measured | not measured | | no taped LiDAR capture |
 | LiDAR, internal consistency | revisit misalignment 19.7 → 3.5 cm with drift correction | | | | E7 |
 
@@ -32,9 +33,11 @@ Gates for reference: photo walls ±8%, video ±3%, ceiling ≤ 1.5 cm, openings 
 
 | Profile | Machine | Tested |
 |---|---|---|
-| `lite` (default on 8 GB) | M1 MacBook Air, 8 GB | ✅ every result above; GPU memory capped at 3.2 GB after a freeze (0.3.1) |
+| `lite` (default on 8 GB) | M1 MacBook Air, 8 GB | ✅ every result above; GPU capped (3.2 GB, 4.5 GB for heavy steps), watchdog at 5.5 GB phys_footprint |
 | `cuda-16gb` | NVIDIA 16 GB (Kaggle T4) | model experiments E1–E3 only, not the full pipeline |
 | `mac-16gb`, `mac-32gb`, `cuda-24gb` | | not tested; settings extrapolated from E1 memory measurements |
 
-Typical runtimes on the 8 GB M1: photos 10–13 s per room (47.7 s for 6 rooms; 4 s per room from checkpoints);
-34 s video 306 s; 37 s LiDAR walk 20 s, 215 s walk ~100 s (+ ~110 s drift correction).
+Typical runtimes on the 8 GB M1 (live, no checkpoints; memory = phys_footprint incl. GPU): photos 15–28 s per room,
+6-room house 109 s at 4.2 GB peak (≈ 8 s replayed from checkpoints); 34 s study video ~6 min at 3.2 GB; 212 s
+whole-house video ~65 min (COLMAP 50 min); LiDAR 37 s walk ~30 s, 215 s walk ~3.5–5 min with drift correction at
+≤ 0.4 GB.
