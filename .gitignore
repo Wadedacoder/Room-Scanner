@@ -43,3 +43,4 @@ cache/*
 # Other Claude sessions' worktrees
 .claude/worktrees/
 dist/
+Applied_AI_Case_Study.pdf
